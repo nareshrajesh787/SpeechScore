@@ -1,0 +1,34 @@
+# Node, Python, and environment-related ignores
+dist/
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Editor files and OS junk
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Data and credentials
+*.local
+*-firebase-adminsdk-*.json
+firebase-adminsdk-*.json
+temp/
+
+# Deployment documentation
+DEPLOYMENT_GUIDE.md
+DEPLOYMENT_CHECKLIST.md
