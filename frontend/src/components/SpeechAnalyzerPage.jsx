@@ -1,9 +1,14 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../firebase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Link } from 'react-router-dom';
+import { db } from '../firebase';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import ResultPanel from './ResultPanel';
 import Navbar from './Navbar';
+import AuthButton from './AuthButton.jsx';
+import { Link } from 'react-router-dom';
 
 export default function SpeechAnalyzerPage() {
     const [audioFile, setAudioFile] = useState(null);
@@ -11,22 +16,87 @@ export default function SpeechAnalyzerPage() {
     const [rubric, setRubric] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState(null);
+    const [user, loadingAuth] = useAuthState(auth);
+    const navigate = useNavigate();
+
+    if (loadingAuth) {
+        return (
+            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col gap-4 items-center max-w-md w-full">
+                    <FontAwesomeIcon icon="user-circle" className="text-indigo-400 text-6xl mb-2" />
+                    <h2 className="font-bold text-2xl text-gray-800 text-center mb-1">Sign in Required</h2>
+                    <p className="text-gray-500 text-center mb-3">Sign in with Google to access your speech analysis and feedback features.</p>
+                    <div className="flex flex-col items-center w-full gap-2">
+                        <AuthButton />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const saveFeedback = async (result) => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        try {
+            await addDoc(collection(db, 'feedback'), {
+                uid: user.uid,
+                ...result,
+                timestamp: Timestamp.now(),
+            });
+            return true;
+        } catch (error) {
+            console.error('Error saving feedback:', error);
+            return false;
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (audioFile) {
             setIsLoading(true)
-            const formData = new FormData();
-            formData.append('audio_file', audioFile);
-            formData.append('prompt', prompt);
-            formData.append('rubric', rubric);
-            const response = await fetch('http://127.0.0.1:8000/api/analyze', {
-                method: 'POST',
-                body: formData,
-            });
-            const data = await response.json()
-            setResult(data)
-            setIsLoading(false)
+            try {
+                const formData = new FormData();
+                formData.append('audio_file', audioFile);
+                formData.append('prompt', prompt);
+                formData.append('rubric', rubric);
+                if (!auth.currentUser) {
+                    setIsLoading(false)
+                    alert("You must be logged in to analyze speech.");
+                    return;
+                }
+                const token = await auth.currentUser.getIdToken(true);
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+                const response = await fetch(`${apiUrl}/api/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: formData,
+                });
+                if (!response.ok) {
+                    const text = await response.text().catch(() => null);
+                    throw new Error(`Server responded ${response.status}: ${text || response.statusText}`);
+                }
+                const data = await response.json()
+                setResult(data)
+            } catch (error) {
+                console.error('Error during analysis:', error)
+                alert("Failed to analyze: " + (error.message || error));
+            } finally {
+                setIsLoading(false)
+            }
         }
     }
 
@@ -40,7 +110,7 @@ export default function SpeechAnalyzerPage() {
                         : "p-6 grid grid-cols-1"
                 }
             >
-                <div className="max-w-3xl mx-auto max-h-fit bg-white rounded-2xl p-8 mt-12 shadow-lg">
+                <div className="max-w-3xl mx-auto max-h-fit bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 mt-12 shadow-lg border border-indigo-100">
                     <h1 className="font-bold text-4xl text-center text-gray-800">
                         <FontAwesomeIcon
                             className="text-indigo-600"
@@ -150,7 +220,7 @@ export default function SpeechAnalyzerPage() {
                     </form>
                 </div>
 
-                {result && <ResultPanel result={result} />}
+                {result && <ResultPanel result={result} onSave={saveFeedback} onTryAgain={() => setResult(null)} />}
             </div>
         </div>
     );

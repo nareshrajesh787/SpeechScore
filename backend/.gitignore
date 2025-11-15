@@ -10,3 +10,6 @@ __pycache__/
 .vscode/
 .idea/
 temp/
+# Firebase Admin SDK credentials (keep local, use env vars in production)
+*-firebase-adminsdk-*.json
+firebase-adminsdk-*.json
