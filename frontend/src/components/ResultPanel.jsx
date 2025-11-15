@@ -3,11 +3,43 @@ import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 
-export default function ResultPanel({ result }) {
+export default function ResultPanel({ result, onSave, onTryAgain }) {
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+
+    if (!result) {
+        return (
+            <div className="bg-white rounded-2xl p-8 flex items-center justify-center min-h-[200px]">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+                    <p className="text-gray-600">Loading results...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const handleSave = async () => {
+        if (!onSave || isSaved) return;
+        setIsSaving(true);
+        try {
+            const success = await onSave(result);
+            if (success) setIsSaved(true);
+            else alert("Failed to save feedback. Please try again.");
+        } catch (error) {
+            console.error("Save error:", error);
+            alert("Failed to save feedback. Please try again.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleTryAgain = () => {
+        if (onTryAgain) onTryAgain();
+    };
     const filler_words = Object.keys(result.filler_count);
     const plain_transcript = result.transcript;
 
-    const words = plain_transcript.split(" ");
+    const words = plain_transcript ? plain_transcript.split(" ") : [];
     const highlighted_transcript = [];
     for (let i = 0; i < words.length; i++) {
         const word1 = words[i].toLowerCase().replace(/[^a-zA-Z]/g, "");
@@ -41,7 +73,7 @@ export default function ResultPanel({ result }) {
     }
 
     return (
-        <div className="max-w-3xl mx-auto bg-white rounded-2xl p-8 mt-12 shadow-lg space-y-6 font-medium">
+        <div className="bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 space-y-6 font-medium border border-indigo-100">
             {/*TOP BAR*/}
             <div className="flex justify-between items-center text-sm text-gray-400">
                 <p>
@@ -49,22 +81,39 @@ export default function ResultPanel({ result }) {
                     Last analyzed: Just now
                 </p>
                 <div className="flex items-center gap-4">
-                    <button className="text-indigo-600 font-medium bg-indigo-100 py-2 px-4 rounded-3xl hover:bg-indigo-200 transition-all">
-                        <FontAwesomeIcon icon="rotate-right" className="me-1" />{" "}
-                        Try Another
-                    </button>
-                    <button className="text-gray-500 bg-gray-100 rounded-2xl py-2 px-4 hover:bg-gray-200 transition-all">
-                        <FontAwesomeIcon
-                            icon={["far", "floppy-disk"]}
-                            className="me-1"
-                        />{" "}
-                        Save
-                    </button>
+                    {onTryAgain && (
+                        <button
+                            onClick={handleTryAgain}
+                            className="text-indigo-600 font-medium bg-indigo-100 py-2 px-4 rounded-3xl hover:bg-indigo-200 transition-all"
+                        >
+                            <FontAwesomeIcon icon="rotate-right" className="me-1" />{" "}
+                            Try Another
+                        </button>
+                    )}
+                    {onSave && (
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving || isSaved}
+                            className={`rounded-2xl py-2 px-4 transition-all ${
+                                isSaved
+                                    ? "text-green-600 bg-green-100 cursor-default"
+                                    : isSaving
+                                    ? "text-gray-400 bg-gray-100 cursor-not-allowed"
+                                    : "text-gray-500 bg-gray-100 hover:bg-gray-200"
+                            }`}
+                        >
+                            <FontAwesomeIcon
+                                icon={isSaved ? "check" : ["far", "floppy-disk"]}
+                                className="me-1"
+                            />{" "}
+                            {isSaved ? "Saved!" : isSaving ? "Saving..." : "Save"}
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/*TRANSCRIPT*/}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-sm leading-relaxed">
+            <div className="bg-gradient-to-br from-white to-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm text-sm leading-relaxed">
                 <h2 className="font-bold text-lg p-2 text-gray-800 mb">
                     <FontAwesomeIcon
                         icon="file-audio"
@@ -78,7 +127,7 @@ export default function ResultPanel({ result }) {
             </div>
 
             {/*RESULT METRICS*/}
-            <div className="bg-white rounded-xl shadow-sm border-gray-100 border p-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="bg-gradient-to-br from-white to-indigo-50/30 rounded-xl shadow-sm border-indigo-100 border p-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 {/* WPM */}
                 <div>
                     <p className="text-lg text-gray-700 font-semibold mb-3">
@@ -181,7 +230,7 @@ export default function ResultPanel({ result }) {
             </div>
 
             {/* AI FEEDBACK AND RUBRIC */}
-            <div className="bg-white rounded-xl shadow-sm border-gray-100 border p-6">
+            <div className="bg-gradient-to-br from-white to-purple-50/20 rounded-xl shadow-sm border-purple-100 border p-6">
                 <p className="text-lg text-gray-700 font-bold mb-3">
                     <FontAwesomeIcon
                         icon="clipboard-list"

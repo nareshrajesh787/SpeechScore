@@ -13,7 +13,9 @@ import {
     faClipboardList,
     faCircleCheck,
     faTriangleExclamation,
-    faChartSimple
+    faChartSimple,
+    faChartLine,
+    faUserCircle
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -37,5 +39,7 @@ library.add(
     faClipboardList,
     faCircleCheck,
     faTriangleExclamation,
-    faChartSimple
+    faChartSimple,
+    faChartLine,
+    faUserCircle
 );

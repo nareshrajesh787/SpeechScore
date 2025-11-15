@@ -5,6 +5,7 @@ import React from 'react'
 import SpeechAnalyzerPage from './components/SpeechAnalyzerPage.jsx'
 import Navbar from './components/Navbar.jsx'
 import LandingPage from './components/LandingPage.jsx'
+import Dashboard from './components/Dashboard.jsx'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path='/analyze' element={<SpeechAnalyzerPage />} />
         <Route path='/' element={<LandingPage />} />
+        <Route path='/dashboard' element={<Dashboard />} />
       </Routes>
     </>
   )
