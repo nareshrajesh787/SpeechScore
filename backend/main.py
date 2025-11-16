@@ -20,6 +20,8 @@ app = FastAPI(
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 # Split by comma and strip whitespace from each origin
 allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+# Log allowed origins for debugging (remove in production if sensitive)
+print(f"CORS Allowed Origins: {allowed_origins}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
