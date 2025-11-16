@@ -77,7 +77,13 @@ export default function SpeechAnalyzerPage() {
                     return;
                 }
                 const token = await auth.currentUser.getIdToken(true);
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+                let apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+                // Remove trailing slash if present
+                apiUrl = apiUrl.replace(/\/+$/, '');
+                // Ensure URL has protocol if missing
+                if (apiUrl && !apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+                    apiUrl = `https://${apiUrl}`;
+                }
                 const response = await fetch(`${apiUrl}/api/analyze`, {
                     method: 'POST',
                     headers: {
