@@ -29,10 +29,24 @@ app.add_middleware(
 )
 
 assembly_api_key = os.getenv("ASSEMBLYAI_API_KEY")
+if not assembly_api_key:
+    print("Warning: ASSEMBLYAI_API_KEY not set")
 
 # Ensure temp directory exists
 temp_dir = Path("temp")
 temp_dir.mkdir(exist_ok=True)
+
+# Root endpoint
+@app.get("/")
+async def root():
+    return {
+        "message": "SpeechScore API",
+        "status": "running",
+        "endpoints": {
+            "health": "/api/health",
+            "analyze": "/api/analyze"
+        }
+    }
 
 # Health check endpoint
 @app.get("/health")
@@ -74,6 +88,8 @@ async def analyzeAudio(
             f.write(contents)
 
         # Process audio
+        if not assembly_api_key:
+            raise HTTPException(status_code=500, detail="ASSEMBLYAI_API_KEY not configured")
         assembly_audio_url = upload_to_assembly(str(audio_file_path), assembly_api_key)
         transcription_id = start_transcription(assembly_audio_url, assembly_api_key)
         transcription = poll_transcription(transcription_id, assembly_api_key)
