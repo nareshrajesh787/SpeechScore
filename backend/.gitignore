@@ -13,6 +13,7 @@ temp/
 # Firebase Admin SDK credentials (keep local, use env vars in production)
 *-firebase-adminsdk-*.json
 firebase-adminsdk-*.json
+speechscore-4df8f-firebase-adminsdk-*.json
 
 # Ignore deployment documentation
 DEPLOYMENT_GUIDE.md
