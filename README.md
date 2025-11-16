@@ -45,7 +45,7 @@ SpeechScore is your personal speaking coach—powered by AI. Upload or record yo
 ## How does it work behind the scenes?
 - **Frontend:** Modern React SPA using Vite, Tailwind CSS, and Firebase for instant login/data
 - **Backend:** FastAPI (Python) deployed on Railway
-    - Audio uploads (never stored—analyzed and deleted immediately)
+    - Audio uploads
     - Uses AssemblyAI for automatic speech recognition (ASR)
     - Uses Google Gemini for AI-powered strengths, improvements, rubric scoring
 - **Secure:** All scoring logic on the backend, authenticated with Firebase; your analyses live only in your Google account’s Firestore
