@@ -2,18 +2,24 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
+// All values are loaded from environment variables for security
 const firebaseConfig = {
-  apiKey: "AIzaSyAEINb6CLXYG7xdF6JvfyZP6xbyptK-yFM",
-  authDomain: "speechscore-4df8f.firebaseapp.com",
-  projectId: "speechscore-4df8f",
-  storageBucket: "speechscore-4df8f.firebasestorage.app",
-  messagingSenderId: "620875607554",
-  appId: "1:620875607554:web:4c1ea75aa5194ca782c11b"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+// Validate that all required environment variables are set
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  throw new Error(
+    "Missing Firebase configuration. Please ensure all VITE_FIREBASE_* environment variables are set."
+  );
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

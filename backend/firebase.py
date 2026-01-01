@@ -24,20 +24,30 @@ if firebase_creds_json and len(firebase_creds_json) > 10:  # Basic validation - 
 
 # Fall back to file if JSON env var not set or invalid
 if cred is None:
-    cred_file = os.getenv("FIREBASE_CREDENTIALS_FILE", "speechscore-4df8f-firebase-adminsdk-fbsvc-67747fe552.json")
+    cred_file = os.getenv("FIREBASE_CREDENTIALS_FILE")
+    if not cred_file:
+        error_msg = (
+            "Firebase credentials not found.\n\n"
+            "Please provide credentials using one of these methods:\n\n"
+            "Option 1 (Recommended for production):\n"
+            "Set FIREBASE_CREDENTIALS_JSON environment variable with the full JSON content.\n\n"
+            "Option 2 (For local development):\n"
+            "Set FIREBASE_CREDENTIALS_FILE environment variable pointing to your credentials JSON file.\n"
+            "Example: export FIREBASE_CREDENTIALS_FILE=/path/to/your-credentials.json\n\n"
+            "To convert a credentials file to JSON string for Railway:\n"
+            "python backend/convert_firebase_creds.py <path-to-credentials-file>\n\n"
+            f"Current FIREBASE_CREDENTIALS_JSON status: {'empty or not set' if not firebase_creds_json else 'set but invalid JSON'}"
+        )
+        raise ValueError(error_msg)
+    
     if os.path.exists(cred_file):
         print(f"Using Firebase credentials from file: {cred_file}")
         cred = credentials.Certificate(cred_file)
     else:
         error_msg = (
-            "Firebase credentials not found.\n\n"
-            "To fix this on Railway:\n"
-            "1. Run locally: python backend/convert_firebase_creds.py backend/speechscore-4df8f-firebase-adminsdk-fbsvc-67747fe552.json\n"
-            "2. Copy the output string\n"
-            "3. In Railway, go to Variables and set:\n"
-            "   Name: FIREBASE_CREDENTIALS_JSON\n"
-            "   Value: <paste the entire string>\n\n"
-            f"Current FIREBASE_CREDENTIALS_JSON status: {'empty or not set' if not firebase_creds_json else 'set but invalid JSON'}"
+            f"Firebase credentials file not found: {cred_file}\n\n"
+            "Please ensure FIREBASE_CREDENTIALS_FILE points to a valid credentials JSON file, "
+            "or use FIREBASE_CREDENTIALS_JSON environment variable instead."
         )
         raise ValueError(error_msg)
 
