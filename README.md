@@ -59,3 +59,101 @@ SpeechScore is your personal speaking coach—powered by AI. Upload or record yo
 - **Deployment:** Vercel (frontend), Railway (backend)
 
 ---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.10+
+- Firebase project (for authentication and database)
+- AssemblyAI account (for speech recognition)
+- Google Gemini API key (for AI analysis)
+
+### Local Development Setup
+
+#### Backend Setup
+
+1. **Navigate to the backend directory:**
+   ```bash
+   cd backend
+   ```
+
+2. **Create a virtual environment:**
+   ```bash
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On macOS/Linux:
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` and add your API keys:
+   - `ASSEMBLYAI_API_KEY`: Get from [AssemblyAI](https://www.assemblyai.com/app/account)
+   - `GEMINI_API_KEY`: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - `FIREBASE_CREDENTIALS_JSON` or `FIREBASE_CREDENTIALS_FILE`: Firebase Admin SDK credentials
+   - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
+
+5. **Run the backend server:**
+   ```bash
+   uvicorn main:app --reload
+   ```
+   The API will be available at `http://localhost:8000`
+
+#### Frontend Setup
+
+1. **Navigate to the frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` and add your Firebase configuration:
+   - Get your Firebase config from [Firebase Console](https://console.firebase.google.com/)
+   - Add all `VITE_FIREBASE_*` variables
+   - Set `VITE_API_URL` to your backend URL (default: `http://localhost:8000`)
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+   The app will be available at `http://localhost:5173`
+
+### Environment Variables
+
+See `.env.example` files in both `frontend/` and `backend/` directories for required environment variables.
+
+**Important Security Notes:**
+- Never commit `.env` files or actual API keys to version control
+- Use environment variables for all sensitive configuration
+- In production, set environment variables through your hosting platform (Vercel, Railway, etc.)
+
+---
+
+## 📝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---

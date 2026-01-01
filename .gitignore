@@ -21,7 +21,8 @@ __pycache__/
 # Environment files
 .env
 .env.*
-*.env
+# Allow .env.example files to be committed (they contain no secrets)
+!.env.example
 
 # Data and credentials
 *.local
