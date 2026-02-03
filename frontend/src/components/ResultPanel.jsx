@@ -390,17 +390,29 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                             {/* RUBRIC SCORES */}
                             <div className="grid gap-y-2 items-center text-md text-gray-700">
                                 {Object.entries(filteredResult.rubric_scores).map(
-                                    ([key, value], i) => (
-                                        <div
-                                            key={i}
-                                            className="flex justify-between items-center w-full"
-                                        >
-                                            <span>{key}</span>
-                                            <span className="font-semibold text-gray-800">
-                                                {value}/5
-                                            </span>
-                                        </div>
-                                    )
+                                    ([key, value], i) => {
+                                        let score, max;
+                                        if (typeof value === 'object' && value !== null && 'score' in value) {
+                                            score = value.score;
+                                            max = value.max_score;
+                                        } else {
+                                            // Legacy format support
+                                            score = value;
+                                            max = 5; // Fallback
+                                        }
+
+                                        return (
+                                            <div
+                                                key={i}
+                                                className="flex justify-between items-center w-full"
+                                            >
+                                                <span>{key}</span>
+                                                <span className="font-semibold text-gray-800">
+                                                    {score}/{max}
+                                                </span>
+                                            </div>
+                                        );
+                                    }
                                 )}
                             </div>
 

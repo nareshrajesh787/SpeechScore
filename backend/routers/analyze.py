@@ -94,7 +94,12 @@ async def analyzeAudio(
         strengths = gemini_response.strengths
         improvements = gemini_response.improvements
         rubric_scores = [r.dict() for r in gemini_response.rubric_scores]
-        rubric_scores_dict = {r['criterion']: r['score'] for r in rubric_scores}
+        # rubric_scores is list of dicts: {'criterion': '...', 'score': X, 'max_score': Y}
+        # We need Dict[str, RubricScore] -> {'Criterion': {'score': X, 'max_score': Y}}
+        rubric_scores_dict = {
+            r['criterion']: {'score': r['score'], 'max_score': r['max_score']}
+            for r in rubric_scores
+        }
         rubric_total = gemini_response.rubric_total
         rubric_max = gemini_response.rubric_max
 

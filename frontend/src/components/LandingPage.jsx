@@ -298,7 +298,7 @@ export default function LandingPage() {
           <p className="text-xl text-indigo-200 mb-10">Join the students and professionals using SpeechScore to communicate with confidence.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
-              className="bg-white text-indigo-900 hover:bg-indigo-50 text-lg px-8 py-4 h-auto"
+              className="!bg-white !text-indigo-900 hover:bg-gray-50 text-lg px-8 py-4 h-auto shadow-none"
               onClick={(e) => handleProtectedClick(e, '/dashboard')}
             >
               Start a practice run
@@ -314,7 +314,7 @@ export default function LandingPage() {
       {/* Login Modal */}
       {showLogin && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowLogin(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col gap-6 items-center max-w-sm w-full relative animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+          <Card className="flex flex-col gap-6 items-center max-w-sm w-full relative animate-in fade-in zoom-in duration-200 shadow-2xl" padding="p-8" onClick={e => e.stopPropagation()}>
             <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-2">
               <FontAwesomeIcon icon="user-circle" className="text-indigo-600 text-3xl" />
             </div>
@@ -328,9 +328,10 @@ export default function LandingPage() {
                 Cancel
               </button>
             </div>
-          </div>
+          </Card>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

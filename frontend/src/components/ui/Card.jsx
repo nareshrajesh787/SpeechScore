@@ -1,10 +1,10 @@
 import React from 'react';
 
-const Card = ({ children, className = '', padding = 'p-6' }) => {
+const Card = ({ children, className = '', padding = 'p-6', as: Component = 'div', ...props }) => {
     return (
-        <div className={`bg-white rounded-2xl shadow-sm border border-indigo-50/50 hover:shadow-md transition-shadow duration-200 ${padding} ${className}`}>
+        <Component className={`bg-white rounded-2xl shadow-sm border border-indigo-50/50 hover:shadow-md transition-shadow duration-200 ${padding} ${className}`} {...props}>
             {children}
-        </div>
+        </Component>
     );
 };
 

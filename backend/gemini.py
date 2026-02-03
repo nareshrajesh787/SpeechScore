@@ -15,6 +15,7 @@ def gemini_output(transcript_text: str, u_prompt: str, rubric: str):
     class RubricItem(BaseModel):
         criterion: str
         score: float
+        max_score: float
 
     class response_format(BaseModel):
         strengths: list[str]
@@ -39,8 +40,8 @@ def gemini_output(transcript_text: str, u_prompt: str, rubric: str):
     Instructions:
     1. Evaluate the provided transcript against the rubric.
     2. Assign a numeric score for each rubric criterion.
-       - If the rubric specifies maximums, respect them.
-       - If no maximums are given, assume equal weighting out of 100 total.
+       - If the rubric specifies maximums, RESPECT THEM and extract the `max_score`.
+       - If no maximums are given, assume equal weighting out of 100 total (e.g. 5 criteria = 20 max each).
     3. Provide specific strengths and areas for improvement as concise bullet-style items.
        Example:
        - Clear structure and logical flow

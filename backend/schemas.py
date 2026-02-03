@@ -22,6 +22,12 @@ class AIFeedback(BaseModel):
     improvements: List[str]
 
 
+class RubricScore(BaseModel):
+    """Score for a specific rubric criterion."""
+    score: float
+    max_score: float
+
+
 class AnalyzeResponse(BaseModel):
     """Response schema for audio analysis endpoint."""
     transcript: str
@@ -31,7 +37,7 @@ class AnalyzeResponse(BaseModel):
     clarity_score: float
     pace_feedback: str
     ai_feedback: AIFeedback
-    rubric_scores: Dict[str, float]
+    rubric_scores: Dict[str, RubricScore]
     rubric_total: float
     rubric_max: float
     words: Optional[List[WordTiming]] = None  # Word-level timestamps for interactive transcript
