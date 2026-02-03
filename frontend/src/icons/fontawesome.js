@@ -15,7 +15,23 @@ import {
     faTriangleExclamation,
     faChartSimple,
     faChartLine,
-    faUserCircle
+    faUserCircle,
+    faFilter,
+    faInfoCircle,
+    faCheck,
+    faPause,
+    faPlay,
+    faCircle,
+    faStop,
+    faRedo,
+    faPlus,
+    faFolder,
+    faFolderPlus,
+    faTimes,
+    faArrowLeft,
+    faList,
+    faMicrophoneSlash,
+    faTrash
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -41,5 +57,21 @@ library.add(
     faTriangleExclamation,
     faChartSimple,
     faChartLine,
-    faUserCircle
+    faUserCircle,
+    faFilter,
+    faInfoCircle,
+    faCheck,
+    faPause,
+    faPlay,
+    faCircle,
+    faStop,
+    faRedo,
+    faPlus,
+    faFolder,
+    faFolderPlus,
+    faTimes,
+    faArrowLeft,
+    faList,
+    faMicrophoneSlash,
+    faTrash
 );

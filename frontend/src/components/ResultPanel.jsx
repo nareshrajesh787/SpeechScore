@@ -3,9 +3,15 @@ import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 
+import InteractiveTranscript from "./InteractiveTranscript";
+import CoachChat from "./CoachChat";
+
 export default function ResultPanel({ result, onSave, onTryAgain }) {
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+
+    const [filter, setFilter] = useState('all'); // 'all', 'fillers', 'pace', 'clarity'
+    const [activeTab, setActiveTab] = useState('transcript'); // 'transcript', 'coach'
 
     if (!result) {
         return (
@@ -36,41 +42,76 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
     const handleTryAgain = () => {
         if (onTryAgain) onTryAgain();
     };
-    const filler_words = Object.keys(result.filler_count);
-    const plain_transcript = result.transcript;
 
-    const words = plain_transcript ? plain_transcript.split(" ") : [];
-    const highlighted_transcript = [];
-    for (let i = 0; i < words.length; i++) {
-        const word1 = words[i].toLowerCase().replace(/[^a-zA-Z]/g, "");
-        const word2 =
-            i + 1 < words.length &&
-            words[i + 1].toLowerCase().replace(/[^a-zA-Z]/g, "");
-        const pair = word2 && `${word1} ${word2}`;
+    const getFilteredFeedback = () => {
+        if (filter === 'all') return result;
 
-        if (filler_words.includes(word1)) {
-            highlighted_transcript.push(
-                <span
-                    key={i}
-                    className="text-red-600 bg-red-100 rounded-md p-[0.1rem]"
-                >
-                    {words[i]}{" "}
-                </span>
-            );
-        } else if (filler_words.includes(pair)) {
-            highlighted_transcript.push(
-                <span
-                    key={i}
-                    className="text-red-600 bg-red-100 rounded-md p-[0.1rem]"
-                >
-                    {words[i]} {words[i + 1]}{" "}
-                </span>
-            );
-            i++;
-        } else {
-            highlighted_transcript.push(words[i] + " ");
+        const filtered = { ...result };
+
+        if (filter === 'fillers') {
+            // Show only filler word related feedback
+            return {
+                ...filtered,
+                ai_feedback: {
+                    strengths: filtered.ai_feedback.strengths.filter(s =>
+                        s.toLowerCase().includes('filler') ||
+                        s.toLowerCase().includes('um') ||
+                        s.toLowerCase().includes('uh')
+                    ),
+                    improvements: filtered.ai_feedback.improvements.filter(i =>
+                        i.toLowerCase().includes('filler') ||
+                        i.toLowerCase().includes('um') ||
+                        i.toLowerCase().includes('uh')
+                    )
+                }
+            };
         }
-    }
+
+        if (filter === 'pace') {
+            // Show only pace related feedback
+            return {
+                ...filtered,
+                ai_feedback: {
+                    strengths: filtered.ai_feedback.strengths.filter(s =>
+                        s.toLowerCase().includes('pace') ||
+                        s.toLowerCase().includes('speed') ||
+                        s.toLowerCase().includes('rate')
+                    ),
+                    improvements: filtered.ai_feedback.improvements.filter(i =>
+                        i.toLowerCase().includes('pace') ||
+                        i.toLowerCase().includes('speed') ||
+                        i.toLowerCase().includes('rate') ||
+                        i.toLowerCase().includes('slow') ||
+                        i.toLowerCase().includes('fast')
+                    )
+                }
+            };
+        }
+
+        if (filter === 'clarity') {
+            // Show only clarity related feedback
+            return {
+                ...filtered,
+                ai_feedback: {
+                    strengths: filtered.ai_feedback.strengths.filter(s =>
+                        s.toLowerCase().includes('clear') ||
+                        s.toLowerCase().includes('articulate') ||
+                        s.toLowerCase().includes('pronunciation')
+                    ),
+                    improvements: filtered.ai_feedback.improvements.filter(i =>
+                        i.toLowerCase().includes('clear') ||
+                        i.toLowerCase().includes('articulate') ||
+                        i.toLowerCase().includes('pronunciation') ||
+                        i.toLowerCase().includes('enunciate')
+                    )
+                }
+            };
+        }
+
+        return filtered;
+    };
+
+    const filteredResult = getFilteredFeedback();
 
     return (
         <div className="bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 space-y-6 font-medium border border-indigo-100">
@@ -94,13 +135,12 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                         <button
                             onClick={handleSave}
                             disabled={isSaving || isSaved}
-                            className={`rounded-2xl py-2 px-4 transition-all ${
-                                isSaved
-                                    ? "text-green-600 bg-green-100 cursor-default"
-                                    : isSaving
+                            className={`rounded-2xl py-2 px-4 transition-all ${isSaved
+                                ? "text-green-600 bg-green-100 cursor-default"
+                                : isSaving
                                     ? "text-gray-400 bg-gray-100 cursor-not-allowed"
                                     : "text-gray-500 bg-gray-100 hover:bg-gray-200"
-                            }`}
+                                }`}
                         >
                             <FontAwesomeIcon
                                 icon={isSaved ? "check" : ["far", "floppy-disk"]}
@@ -112,19 +152,63 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                 </div>
             </div>
 
-            {/*TRANSCRIPT*/}
-            <div className="bg-gradient-to-br from-white to-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm text-sm leading-relaxed">
-                <h2 className="font-bold text-lg p-2 text-gray-800 mb">
-                    <FontAwesomeIcon
-                        icon="file-audio"
-                        className="text-indigo-600 me-2"
-                    />
-                    Transcript
+            {/*FILTER DROPDOWN*/}
+            <div className="flex items-center justify-between">
+                <h2 className="font-bold text-lg text-gray-800">
+                    <FontAwesomeIcon icon="filter" className="text-indigo-600 mr-2" />
+                    Filter Analysis
                 </h2>
-                <p className="mt-2 p-2 text-base text-gray-600">
-                    {highlighted_transcript}
-                </p>
+                <select
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                    <option value="all">All Feedback</option>
+                    <option value="fillers">Filler Words</option>
+                    <option value="pace">Pace & Speed</option>
+                    <option value="clarity">Clarity & Pronunciation</option>
+                </select>
             </div>
+
+            {/* TABBED CONTENT AREA */}
+            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 w-fit mb-4">
+                <button
+                    onClick={() => setActiveTab('transcript')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'transcript'
+                        ? "bg-indigo-50 text-indigo-700 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                        }`}
+                >
+                    <FontAwesomeIcon icon="file-lines" className="mr-2" />
+                    Transcript
+                </button>
+                <button
+                    onClick={() => setActiveTab('coach')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'coach'
+                        ? "bg-indigo-50 text-indigo-700 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                        }`}
+                >
+                    <FontAwesomeIcon icon="chalkboard-user" className="mr-2" />
+                    Ask Coach
+                </button>
+            </div>
+
+            {/* TAB CONTENT */}
+            {activeTab === 'transcript' ? (
+                <InteractiveTranscript
+                    transcript={result.transcript}
+                    wordTimestamps={result.words}
+                    fillerCount={result.filler_count}
+                    audioUrl={result.audioUrl}
+                    audioDuration={result.audio_duration}
+                />
+            ) : (
+                <CoachChat
+                    transcript={result.transcript}
+                    rubricFeedback={result}
+                />
+            )}
 
             {/*RESULT METRICS*/}
             <div className="bg-gradient-to-br from-white to-indigo-50/30 rounded-xl shadow-sm border-indigo-100 border p-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
@@ -160,7 +244,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                 <div>
                     <p className="text-lg text-gray-700 font-semibold mb-3">
                         <FontAwesomeIcon
-                            icon="magic-wand-sparkles"
+                            icon="wand-magic-sparkles"
                             className="text-orange-400 me-1"
                         />{" "}
                         Filler Words
@@ -237,6 +321,11 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                         className="text-orange-400 me-1"
                     />{" "}
                     AI Generated Content Feedback
+                    {filter !== 'all' && (
+                        <span className="text-sm font-normal text-gray-500 ml-2">
+                            (Filtered: {filter})
+                        </span>
+                    )}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -246,18 +335,22 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                         <div className="flex-1">
                             <p className="text-green-600 text-lg font-semibold mb-3">
                                 <FontAwesomeIcon
-                                    icon="check-circle"
+                                    icon="circle-check"
                                     className="me-2"
                                 />
                                 Key Strengths
                             </p>
-                            <ul className="list-disc ml-5 text-md text-gray-700 space-y-2">
-                                {result.ai_feedback.strengths.map(
-                                    (point, i) => (
-                                        <li key={i}>{point}</li>
-                                    )
-                                )}
-                            </ul>
+                            {filteredResult.ai_feedback.strengths.length > 0 ? (
+                                <ul className="list-disc ml-5 text-md text-gray-700 space-y-2">
+                                    {filteredResult.ai_feedback.strengths.map(
+                                        (point, i) => (
+                                            <li key={i}>{point}</li>
+                                        )
+                                    )}
+                                </ul>
+                            ) : (
+                                <p className="text-gray-500 text-sm italic">No strengths found for this filter.</p>
+                            )}
                         </div>
 
                         {/* AREAS TO IMPROVE */}
@@ -269,13 +362,17 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                                 />
                                 Areas to Improve
                             </p>
-                            <ul className="list-disc ml-5 text-md text-gray-700 space-y-2">
-                                {result.ai_feedback.improvements.map(
-                                    (point, i) => (
-                                        <li key={i}>{point}</li>
-                                    )
-                                )}
-                            </ul>
+                            {filteredResult.ai_feedback.improvements.length > 0 ? (
+                                <ul className="list-disc ml-5 text-md text-gray-700 space-y-2">
+                                    {filteredResult.ai_feedback.improvements.map(
+                                        (point, i) => (
+                                            <li key={i}>{point}</li>
+                                        )
+                                    )}
+                                </ul>
+                            ) : (
+                                <p className="text-gray-500 text-sm italic">No improvements found for this filter.</p>
+                            )}
                         </div>
                     </div>
 
@@ -292,7 +389,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
 
                             {/* RUBRIC SCORES */}
                             <div className="grid gap-y-2 items-center text-md text-gray-700">
-                                {Object.entries(result.rubric_scores).map(
+                                {Object.entries(filteredResult.rubric_scores).map(
                                     ([key, value], i) => (
                                         <div
                                             key={i}
@@ -313,7 +410,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                                     Total Score:{" "}
                                 </span>
                                 <span className="font-bold text-lg text-indigo-600 bg-indigo-100 py-[0.15rem] px-1 rounded-md">
-                                    {result.rubric_total}/{result.rubric_max}
+                                    {filteredResult.rubric_total}/{filteredResult.rubric_max}
                                 </span>
                             </div>
                         </div>

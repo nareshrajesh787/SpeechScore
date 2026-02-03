@@ -62,5 +62,6 @@ async def get_current_user(authorization: str = Header(...)):
     try:
         decoded_token = auth.verify_id_token(id_token)
         return decoded_token
-    except:
+    except Exception as e:
+        print(f"Token verification failed: {e}") # Print is captured by Railway logs
         raise HTTPException(status_code=401, detail="Invalid Firebase ID Token")

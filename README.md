@@ -1,159 +1,100 @@
 # SpeechScore
 
-🌟 **AI-powered Speech Coach for Everyone**
-**Practice, analyze, and improve your public speaking instantly in your browser.**
+**AI practice studio for high-stakes speaking: record, analyze, and iterate on speeches with targeted feedback and coaching.**
 
-Live App: [https://speech-score.vercel.app/](https://speech-score.vercel.app/)
+## Overview
 
----
-
-## What is SpeechScore?
-
-SpeechScore is your personal speaking coach—powered by AI. Upload or record your speech, choose a prompt/rubric, and get instant feedback on clarity, pace, filler words, and delivery. With beautiful analytics and your own secure dashboard, you can track your progress, polish your communication skills, and boost your presentation confidence—anytime, anywhere.
-
-### Who is it for?
-- **Students & debate teams:** Practice for classroom talks, persuasive speeches, or debate rebuttals.
-- **Professionals & job seekers:** Rehearse elevator pitches, interviews, sales, and conference talks.
-- **Language learners:** Improve fluency, reduce filler words, and monitor clarity in your target language.
-- **Content creators & podcasters:** Polish voiceovers, intros, and scripted content on the go.
-- **Anyone:** Build confidence and get real feedback—no judgment, just growth.
-
----
+SpeechScore (V2.0) transforms public speaking practice from a passive "grading" experience into an active, iterative training loop—a "Competitive Career Coach" in your browser. Designed for high-stakes speakers like debate students and job seekers, it organizes practice into **Projects** where you can record drafts, receive immediate feedback on pacing and clarity, and even chat with an AI coach grounded in your specific speech to improve over time.
 
 ## Features
-- 🎙️ Record or upload your own audio right in your browser (secure, private)
-- ⚡ Instant, AI-powered analysis & feedback based on your speech
-- 📊 See strengths, improvement suggestions, WPM, rubric scores, clarity, filler count, and more
-- 📅 Private dashboard: view and revisit all your past analyses
-- 📝 Custom rubric support—define what "good" means for YOUR practice session
-- 🔒 Google Sign-In: all your data is private and only accessible to you
-- 💡 Simple, beautiful, modern UI designed to keep you motivated
 
----
+*   **Projects & Scenarios**: Organize your practice by goal (e.g., "FBLA State Finals", "Tech Sales Pitch", or "Job Interview").
+*   **Recording & Analysis**: Record directly in the browser or upload files. Powered by AssemblyAI for precise transcription and Gemini for qualitative insights.
+*   **Interactive Transcript**: Click any word or "filler" detected in the transcript to instantly play that section of the audio.
+*   **Ask the Coach**: Chat with an AI coach that understands the context of your specific speech to get tailored advice (e.g., "How can I make my opening hook stronger?").
+*   **Progress Over Drafts**: Track how your pacing, clarity, and filler word usage improve from Draft 1 to Draft 5.
 
-## How It Works
-1. **Sign in** with your Google account (no spam, private to you)
-2. **Record** a new speech or upload an audio file (<20MB, MP3/WAV/AAC)
-3. (Optional) **Set a prompt or custom rubric** for targeted feedback
-4. **Get instant results:**
-    - See your scores, words-per-minute, filler count, clarity, and actionable tips
-    - Save or "Try Another" and repeat (it’s fun, really!)
-5. **Visit your Dashboard** to track progress over time
+## Architecture & Tech Stack
 
----
+*   **Frontend**: React + Vite + Tailwind CSS (Deployed on Vercel).
+*   **Backend**: FastAPI with modular routers (Deployed on Railway).
+*   **Auth & Data**: Firebase Authentication + Cloud Firestore.
+    *   Data Hierarchy: `users/{uid}/projects/{projectId}/recordings/{recordingId}`.
+*   **AI Services**:
+    *   **AssemblyAI**: Speech-to-text and timestamping.
+    *   **Google Gemini**: Qualitative analysis and coaching chat.
 
-## How does it work behind the scenes?
-- **Frontend:** Modern React SPA using Vite, Tailwind CSS, and Firebase for instant login/data
-- **Backend:** FastAPI (Python) deployed on Railway
-    - Audio uploads
-    - Uses AssemblyAI for automatic speech recognition (ASR)
-    - Uses Google Gemini for AI-powered strengths, improvements, rubric scoring
-- **Secure:** All scoring logic on the backend, authenticated with Firebase; your analyses live only in your Google account’s Firestore
-- **No tracking, no ads, no nonsense.**
+### Key Data Flows
+*   **Analyze Recording**: Browser → FastAPI (`/api/analysis`) → AssemblyAI → Gemini → Client.
+*   **Ask the Coach**: Browser → FastAPI (`/api/coach`) → Gemini (with transcript context) → Client.
 
----
+## Getting Started (Local Development)
 
-## 🚦 Technology Stack
-- **Frontend:** React, Tailwind, Firebase Auth
-- **Backend:** FastAPI, Python, AssemblyAI, Gemini (Google GenAI)
-- **Deployment:** Vercel (frontend), Railway (backend)
-
----
-
-## 🚀 Getting Started
+Follow these steps to run SpeechScore locally. For full operational details, see `docs/operations.md`.
 
 ### Prerequisites
-- Node.js 18+ and npm
-- Python 3.10+
-- Firebase project (for authentication and database)
-- AssemblyAI account (for speech recognition)
-- Google Gemini API key (for AI analysis)
+*   Node.js (v18+)
+*   Python (v3.10+)
+*   Firebase Project (Auth & Firestore enabled)
 
-### Local Development Setup
+### 1. Clone & Install
+```bash
+git clone https://github.com/your-username/SpeechScore.git
+cd SpeechScore
 
-#### Backend Setup
+# Frontend
+cd frontend
+npm install
 
-1. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
+# Backend
+cd ../backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
+### 2. Configure Environment
+Create `.env` files in both `frontend/` and `backend/` folders. **Do not commit these files.**
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Backend (.env):**
+*   `GEMINI_API_KEY`
+*   `ASSEMBLYAI_API_KEY`
+*   `FIREBASE_CREDENTIALS_FILE` (Path to your service account JSON)
+*   `ALLOWED_ORIGINS` (e.g., `http://localhost:5173`)
 
-4. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and add your API keys:
-   - `ASSEMBLYAI_API_KEY`: Get from [AssemblyAI](https://www.assemblyai.com/app/account)
-   - `GEMINI_API_KEY`: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - `FIREBASE_CREDENTIALS_JSON` or `FIREBASE_CREDENTIALS_FILE`: Firebase Admin SDK credentials
-   - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
+**Frontend (.env):**
+*   `VITE_API_URL` (Set to `http://localhost:8000`)
+*   `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, etc.
 
-5. **Run the backend server:**
-   ```bash
-   uvicorn main:app --reload
-   ```
-   The API will be available at `http://localhost:8000`
+### 3. Run Locally
 
-#### Frontend Setup
+**Backend:**
+```bash
+cd backend
+source venv/bin/activate
+uvicorn main:app --reload --port 8000
+```
 
-1. **Navigate to the frontend directory:**
-   ```bash
-   cd frontend
-   ```
+**Frontend:**
+```bash
+cd frontend
+npm run dev
+```
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+## Deployment
 
-3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and add your Firebase configuration:
-   - Get your Firebase config from [Firebase Console](https://console.firebase.google.com/)
-   - Add all `VITE_FIREBASE_*` variables
-   - Set `VITE_API_URL` to your backend URL (default: `http://localhost:8000`)
+*   **Frontend (Vercel)**: Connect your GitHub repo. Set `VITE_API_URL` to your production backend URL.
+*   **Backend (Railway)**: Connect your GitHub repo. Set `GEMINI_API_KEY`, `ASSEMBLYAI_API_KEY`, and `FIREBASE_CREDENTIALS_JSON`.
 
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-   The app will be available at `http://localhost:5173`
+For a detailed deployment checklist, see [docs/operations.md](docs/operations.md).
 
-### Environment Variables
+## Documentation
 
-See `.env.example` files in both `frontend/` and `backend/` directories for required environment variables.
+*   [docs/prd.md](docs/prd.md) – Product Requirements & Roadmap.
+*   [docs/architecture.md](docs/architecture.md) – System Architecture & Data Flows.
+*   [docs/design-language.md](docs/design-language.md) – Design System & Visual Identity.
+*   [docs/operations.md](docs/operations.md) – Operations, Environment Vars & Deployment Manual.
 
-**Important Security Notes:**
-- Never commit `.env` files or actual API keys to version control
-- Use environment variables for all sensitive configuration
-- In production, set environment variables through your hosting platform (Vercel, Railway, etc.)
+## Contributing
 
----
-
-## 📝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
