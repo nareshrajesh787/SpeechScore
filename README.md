@@ -94,7 +94,3 @@ For a detailed deployment checklist, see [docs/operations.md](docs/operations.md
 *   [docs/architecture.md](docs/architecture.md) – System Architecture & Data Flows.
 *   [docs/design-language.md](docs/design-language.md) – Design System & Visual Identity.
 *   [docs/operations.md](docs/operations.md) – Operations, Environment Vars & Deployment Manual.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
