@@ -8,6 +8,7 @@ import Navbar from './Navbar.jsx';
 import '../icons/fontawesome.js';
 import Button from './ui/Button.jsx';
 import Card from './ui/Card.jsx';
+import Modal from './ui/Modal.jsx';
 
 export default function LandingPage() {
   const [user] = useAuthState(auth);
@@ -298,7 +299,8 @@ export default function LandingPage() {
           <p className="text-xl text-indigo-200 mb-10">Join the students and professionals using SpeechScore to communicate with confidence.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
-              className="!bg-white !text-indigo-900 hover:bg-gray-50 text-lg px-8 py-4 h-auto shadow-none"
+              variant="inverted"
+              className="text-lg px-8 py-4 h-auto"
               onClick={(e) => handleProtectedClick(e, '/dashboard')}
             >
               Start a practice run
@@ -312,26 +314,30 @@ export default function LandingPage() {
       </section>
 
       {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowLogin(false)}>
-          <Card className="flex flex-col gap-6 items-center max-w-sm w-full relative animate-in fade-in zoom-in duration-200 shadow-2xl" padding="p-8" onClick={e => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-2">
-              <FontAwesomeIcon icon="user-circle" className="text-indigo-600 text-3xl" />
-            </div>
-            <div className="text-center">
-              <h2 className="font-bold text-2xl text-gray-900 mb-2">Sign in Required</h2>
-              <p className="text-gray-500 text-sm">Sign in with Google to access your dashboard and save your progress.</p>
-            </div>
-            <div className="w-full space-y-3">
-              <AuthButton />
-              <button className="text-gray-500 hover:text-gray-600 text-sm w-full text-center py-2 transition-colors" onClick={() => setShowLogin(false)}>
-                Cancel
-              </button>
-            </div>
-          </Card>
+      <Modal
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        className="p-8 flex flex-col gap-6 items-center max-w-sm w-full"
+        labelledBy="landing-signin-heading"
+      >
+        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-2">
+          <FontAwesomeIcon icon="user-circle" className="text-indigo-600 text-3xl" />
         </div>
-      )
-      }
+        <div className="text-center">
+          <h2 id="landing-signin-heading" className="font-bold text-2xl text-gray-900 mb-2">Sign in Required</h2>
+          <p className="text-gray-500 text-sm">Sign in with Google to access your dashboard and save your progress.</p>
+        </div>
+        <div className="w-full space-y-3">
+          <AuthButton />
+          <Button
+            variant="subtle"
+            className="text-sm w-full py-2"
+            onClick={() => setShowLogin(false)}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </div >
   );
 }

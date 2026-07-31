@@ -6,40 +6,24 @@ import { motion } from 'framer-motion';
 
 import InteractiveTranscript from "./InteractiveTranscript";
 import CoachChat from "./CoachChat";
+import Button from "./ui/Button";
+import Spinner from "./ui/Spinner";
+import Tabs from "./ui/Tabs";
 import { getRubricScoreEntries } from "../utils/normalizeRecording";
 
-export default function ResultPanel({ result, onSave, onTryAgain }) {
-    const [isSaving, setIsSaving] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-
+export default function ResultPanel({ result, onTryAgain }) {
     const [filter, setFilter] = useState('all'); // 'all', 'fillers', 'pace', 'clarity'
     const [activeTab, setActiveTab] = useState('transcript'); // 'transcript', 'coach'
 
     if (!result) {
         return (
-            <div className="bg-white rounded-2xl p-8 flex items-center justify-center min-h-[200px]">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
-                    <p className="text-gray-600">Loading results...</p>
-                </div>
-            </div>
+            <Spinner
+                size="sm"
+                label="Loading results..."
+                className="bg-white rounded-2xl p-8 min-h-[200px]"
+            />
         );
     }
-
-    const handleSave = async () => {
-        if (!onSave || isSaved) return;
-        setIsSaving(true);
-        try {
-            const success = await onSave(result);
-            if (success) setIsSaved(true);
-            else alert("Failed to save feedback. Please try again.");
-        } catch (error) {
-            console.error("Save error:", error);
-            alert("Failed to save feedback. Please try again.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     const handleTryAgain = () => {
         if (onTryAgain) onTryAgain();
@@ -136,31 +120,14 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                 </p>
                 <div className="flex items-center gap-4">
                     {onTryAgain && (
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={handleTryAgain}
-                            className="text-indigo-600 font-medium bg-indigo-100 py-2 px-4 rounded-3xl hover:bg-indigo-200 transition-all"
+                            className="bg-indigo-100 hover:bg-indigo-200 rounded-3xl"
                         >
-                            <FontAwesomeIcon icon="rotate-right" className="me-1" />{" "}
+                            <FontAwesomeIcon icon="rotate-right" />
                             Try Another
-                        </button>
-                    )}
-                    {onSave && (
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving || isSaved}
-                            className={`rounded-2xl py-2 px-4 transition-all ${isSaved
-                                ? "text-green-600 bg-green-100 cursor-default"
-                                : isSaving
-                                    ? "text-gray-400 bg-gray-100 cursor-not-allowed"
-                                    : "text-gray-500 bg-gray-100 hover:bg-gray-200"
-                                }`}
-                        >
-                            <FontAwesomeIcon
-                                icon={isSaved ? "check" : ["far", "floppy-disk"]}
-                                className="me-1"
-                            />{" "}
-                            {isSaved ? "Saved!" : isSaving ? "Saving..." : "Save"}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
@@ -184,28 +151,16 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
             </div>
 
             {/* TABBED CONTENT AREA */}
-            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 w-fit mb-4">
-                <button
-                    onClick={() => setActiveTab('transcript')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'transcript'
-                        ? "bg-indigo-50 text-indigo-700 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                        }`}
-                >
-                    <FontAwesomeIcon icon="file-lines" className="mr-2" />
-                    Transcript
-                </button>
-                <button
-                    onClick={() => setActiveTab('coach')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'coach'
-                        ? "bg-indigo-50 text-indigo-700 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                        }`}
-                >
-                    <FontAwesomeIcon icon="chalkboard-user" className="mr-2" />
-                    Ask Coach
-                </button>
-            </div>
+            <Tabs
+                tabs={[
+                    { id: 'transcript', label: 'Transcript', icon: 'file-lines' },
+                    { id: 'coach', label: 'Ask Coach', icon: 'chalkboard-user' },
+                ]}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+                fullWidth={false}
+                className="mb-4"
+            />
 
             {/* TAB CONTENT */}
             {activeTab === 'transcript' ? (
@@ -354,7 +309,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                                 Key Strengths
                             </p>
                             {filteredResult.ai_feedback.strengths.length > 0 ? (
-                                <ul className="list-disc ml-5 text-md text-gray-700 space-y-2">
+                                <ul className="list-disc ml-5 text-base text-gray-700 space-y-2">
                                     {filteredResult.ai_feedback.strengths.map(
                                         (point, i) => (
                                             <li key={i}>{point}</li>
@@ -376,7 +331,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                                 Areas to Improve
                             </p>
                             {filteredResult.ai_feedback.improvements.length > 0 ? (
-                                <ul className="list-disc ml-5 text-md text-gray-700 space-y-2">
+                                <ul className="list-disc ml-5 text-base text-gray-700 space-y-2">
                                     {filteredResult.ai_feedback.improvements.map(
                                         (point, i) => (
                                             <li key={i}>{point}</li>
@@ -401,7 +356,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                             </p>
 
                             {/* RUBRIC SCORES */}
-                            <div className="grid gap-y-2 items-center text-md text-gray-700">
+                            <div className="grid gap-y-2 items-center text-base text-gray-700">
                                 {getRubricScoreEntries(filteredResult.rubric_scores).map(
                                     ({ criterion, score, max }, i) => (
                                         <div

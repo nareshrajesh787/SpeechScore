@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+import Button from './ui/Button';
+
 export default function InteractiveTranscript({ 
     transcript, 
     wordTimestamps, 
@@ -196,13 +198,10 @@ export default function InteractiveTranscript({
                 </h2>
                 {audioUrl && (
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={togglePlayPause}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-semibold transition flex items-center gap-2"
-                        >
+                        <Button variant="primary" onClick={togglePlayPause}>
                             <FontAwesomeIcon icon={isPlaying ? 'pause' : 'play'} />
                             {isPlaying ? 'Pause' : 'Play'}
-                        </button>
+                        </Button>
                         {audioDuration && (
                             <span className="text-sm text-gray-500">
                                 {Math.floor(currentTime / 1000)}s / {Math.floor(audioDuration)}s

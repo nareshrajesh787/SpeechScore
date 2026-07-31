@@ -9,9 +9,11 @@ import { uploadAudioToStorage } from '../utils/audioStorage';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
 import ResultPanel from './ResultPanel';
 import Navbar from './Navbar';
-import AuthButton from './AuthButton.jsx';
 import StudioMode from './StudioMode';
 import AnalyzerForm from './AnalyzerForm';
+import SignInGate from './ui/SignInGate';
+import Spinner from './ui/Spinner';
+import Tabs from './ui/Tabs';
 import { Link } from 'react-router-dom';
 
 import { API_URL } from '../config';
@@ -110,29 +112,11 @@ export default function SpeechAnalyzerPage() {
     };
 
     if (loadingAuth) {
-        return (
-            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading...</p>
-                </div>
-            </div>
-        );
+        return <Spinner size="lg" label="Loading..." fullScreen />;
     }
 
     if (!user) {
-        return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col gap-4 items-center max-w-md w-full">
-                    <FontAwesomeIcon icon="user-circle" className="text-indigo-400 text-6xl mb-2" />
-                    <h2 className="font-bold text-2xl text-gray-800 text-center mb-1">Sign in Required</h2>
-                    <p className="text-gray-500 text-center mb-3">Sign in with Google to access your speech analysis and feedback features.</p>
-                    <div className="flex flex-col items-center w-full gap-2">
-                        <AuthButton />
-                    </div>
-                </div>
-            </div>
-        );
+        return <SignInGate message="Sign in with Google to access your speech analysis and feedback features." />;
     }
 
 
@@ -337,30 +321,15 @@ export default function SpeechAnalyzerPage() {
                     )}
 
                     {/* Mode Toggle */}
-                    <div className="flex gap-2 mb-5 p-1 bg-gray-100 rounded-xl">
-                        <button
-                            type="button"
-                            onClick={() => setMode('upload')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${mode === 'upload'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            <FontAwesomeIcon icon="cloud-arrow-up" className="mr-2" />
-                            Upload File
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMode('studio')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${mode === 'studio'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            <FontAwesomeIcon icon="microphone" className="mr-2" />
-                            Studio Mode
-                        </button>
-                    </div>
+                    <Tabs
+                        tabs={[
+                            { id: 'upload', label: 'Upload File', icon: 'cloud-arrow-up' },
+                            { id: 'studio', label: 'Studio Mode', icon: 'microphone' },
+                        ]}
+                        activeTab={mode}
+                        onChange={setMode}
+                        className="mb-5"
+                    />
 
                     {mode === 'studio' ? (
                         <StudioMode

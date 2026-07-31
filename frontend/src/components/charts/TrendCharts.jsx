@@ -12,6 +12,8 @@ import {
     ReferenceLine
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Card from '../ui/Card';
+import EmptyState from '../ui/EmptyState';
 
 export default function TrendCharts({ recordings }) {
     // Transform recordings data for charts
@@ -61,22 +63,18 @@ export default function TrendCharts({ recordings }) {
 
     if (chartData.length < 2) {
         return (
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-12 shadow-sm text-center">
-                <div className="text-indigo-500 text-6xl mb-4">
-                    <FontAwesomeIcon icon="chart-line" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Not enough data yet</h3>
-                <p className="text-gray-600">
-                    Record more drafts to see your progress trends over time.
-                </p>
-            </div>
+            <EmptyState
+                icon="chart-line"
+                title="Not enough data yet"
+                description="Record more drafts to see your progress trends over time."
+            />
         );
     }
 
     return (
         <div className="space-y-6">
             {/* WPM Chart */}
-            <div className="bg-white rounded-2xl shadow-sm border border-indigo-50/50 p-6">
+            <Card>
                 <div className="mb-4">
                     <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
                         <FontAwesomeIcon icon="gauge" className="text-indigo-600" />
@@ -132,10 +130,10 @@ export default function TrendCharts({ recordings }) {
                         />
                     </LineChart>
                 </ResponsiveContainer>
-            </div>
+            </Card>
 
             {/* Filler Words Chart */}
-            <div className="bg-white rounded-2xl shadow-sm border border-indigo-50/50 p-6">
+            <Card>
                 <div className="mb-4">
                     <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
                         <FontAwesomeIcon icon="wand-magic-sparkles" className="text-red-500" />
@@ -166,10 +164,10 @@ export default function TrendCharts({ recordings }) {
                         />
                     </BarChart>
                 </ResponsiveContainer>
-            </div>
+            </Card>
 
             {/* Clarity Chart */}
-            <div className="bg-white rounded-2xl shadow-sm border border-indigo-50/50 p-6">
+            <Card>
                 <div className="mb-4">
                     <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
                         <FontAwesomeIcon icon="star" className="text-indigo-600" />
@@ -204,7 +202,7 @@ export default function TrendCharts({ recordings }) {
                         />
                     </LineChart>
                 </ResponsiveContainer>
-            </div>
+            </Card>
         </div>
     );
 }

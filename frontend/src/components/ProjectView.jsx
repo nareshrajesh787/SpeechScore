@@ -14,10 +14,15 @@ import { db, auth } from '../firebase';
 import { deleteRecording as deleteRecordingUtil } from '../utils/projectUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Navbar from './Navbar';
-import AuthButton from './AuthButton';
 import ResultPanel from './ResultPanel';
 import TrendCharts from './charts/TrendCharts';
 import RecordingCard from './RecordingCard';
+import Button from './ui/Button';
+import EmptyState from './ui/EmptyState';
+import Modal from './ui/Modal';
+import SignInGate from './ui/SignInGate';
+import Spinner from './ui/Spinner';
+import Tabs from './ui/Tabs';
 
 export default function ProjectView() {
     const { projectId } = useParams();
@@ -92,34 +97,12 @@ export default function ProjectView() {
         }
     };
 
-    const formatDate = (timestamp) => {
-        if (!timestamp) return 'Unknown';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleString();
-    };
-
     if (loading || loadingData) {
-        return (
-            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading project...</p>
-                </div>
-            </div>
-        );
+        return <Spinner size="lg" label="Loading project..." fullScreen />;
     }
 
     if (!user) {
-        return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col gap-4 items-center max-w-md w-full">
-                    <FontAwesomeIcon icon="user-circle" className="text-indigo-400 text-6xl mb-2" />
-                    <h2 className="font-bold text-2xl text-gray-800 text-center mb-1">Sign in Required</h2>
-                    <p className="text-gray-500 text-center mb-3">Sign in to view your projects.</p>
-                    <AuthButton />
-                </div>
-            </div>
-        );
+        return <SignInGate message="Sign in to view your projects." />;
     }
 
     if (!project) {
@@ -158,40 +141,29 @@ export default function ProjectView() {
                                 <p className="text-gray-600 mt-2">{project.description}</p>
                             )}
                         </div>
-                        <Link
+                        <Button
+                            as={Link}
                             to={`/analyze?projectId=${projectId}`}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2"
+                            variant="primary"
+                            className="px-6 py-3"
                         >
                             <FontAwesomeIcon icon="plus" />
                             New Recording
-                        </Link>
+                        </Button>
                     </div>
                 </div>
 
                 {/* Tabs */}
                 {recordings.length > 0 && (
-                    <div className="mb-6 flex gap-2 p-1 bg-gray-100 rounded-xl">
-                        <button
-                            onClick={() => setActiveTab('recordings')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${activeTab === 'recordings'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            <FontAwesomeIcon icon="list" className="mr-2" />
-                            Recordings
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('trends')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${activeTab === 'trends'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            <FontAwesomeIcon icon="chart-line" className="mr-2" />
-                            Trends
-                        </button>
-                    </div>
+                    <Tabs
+                        tabs={[
+                            { id: 'recordings', label: 'Recordings', icon: 'list' },
+                            { id: 'trends', label: 'Trends', icon: 'chart-line' }
+                        ]}
+                        activeTab={activeTab}
+                        onChange={setActiveTab}
+                        className="mb-6"
+                    />
                 )}
 
                 {/* Content based on active tab */}
@@ -201,20 +173,21 @@ export default function ProjectView() {
                     <>
                         {/* Recordings List */}
                         {recordings.length === 0 ? (
-                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-12 shadow-sm text-center">
-                                <div className="text-indigo-500 text-6xl mb-4">
-                                    <FontAwesomeIcon icon="microphone-slash" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-2">No recordings yet</h3>
-                                <p className="text-gray-600 mb-6">Create your first recording to get started.</p>
-                                <Link
+                            <EmptyState
+                                icon="microphone-slash"
+                                title="No recordings yet"
+                                description="Create your first recording to get started."
+                            >
+                                <Button
+                                    as={Link}
                                     to={`/analyze?projectId=${projectId}`}
-                                    className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-medium hover:bg-indigo-700 transition shadow-md"
+                                    variant="primary"
+                                    className="px-6 py-3 rounded-full"
                                 >
-                                    <FontAwesomeIcon icon="microphone" className="mr-2" />
+                                    <FontAwesomeIcon icon="microphone" />
                                     Create First Recording
-                                </Link>
-                            </div>
+                                </Button>
+                            </EmptyState>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {recordings.map((recording) => (
@@ -231,27 +204,22 @@ export default function ProjectView() {
                         )}
 
                         {/* Recording Detail Modal */}
-                        {selectedRecording && (
-                            <div
-                                className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                        <Modal
+                            isOpen={!!selectedRecording}
+                            onClose={() => setSelectedRecording(null)}
+                            className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden"
+                        >
+                            <button
+                                className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
                                 onClick={() => setSelectedRecording(null)}
+                                aria-label="Close"
                             >
-                                <div
-                                    className="relative w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <button
-                                        className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
-                                        onClick={() => setSelectedRecording(null)}
-                                    >
-                                        <FontAwesomeIcon icon="times" />
-                                    </button>
-                                    <div className="overflow-y-auto max-h-[90vh]">
-                                        <ResultPanel result={selectedRecording} />
-                                    </div>
-                                </div>
+                                <FontAwesomeIcon icon="times" />
+                            </button>
+                            <div className="overflow-y-auto max-h-[90vh]">
+                                <ResultPanel result={selectedRecording} />
                             </div>
-                        )}
+                        </Modal>
                     </>
                 )}
             </div>

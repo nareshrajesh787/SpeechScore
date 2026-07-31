@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock FontAwesomeIcon to avoid needing to load icons
@@ -46,6 +46,37 @@ describe('ResultPanel rubric breakdown', () => {
     }} />);
 
     expect(screen.getByText('4/5')).toBeInTheDocument();
+  });
+});
+
+describe('ResultPanel tabs', () => {
+  const scoredResult = {
+    ...baseResult,
+    rubric_scores: { Clarity: { score: 8, max_score: 10 } },
+    rubric_total: 15,
+    rubric_max: 20,
+  };
+
+  it('renders both tabs and switches visible content when "Ask Coach" is clicked', () => {
+    render(<ResultPanel result={scoredResult} />);
+
+    const transcriptTab = screen.getByRole('button', { name: /Transcript/i });
+    const coachTab = screen.getByRole('button', { name: /Ask Coach/i });
+    expect(transcriptTab).toBeInTheDocument();
+    expect(coachTab).toBeInTheDocument();
+
+    // Transcript is the default tab.
+    expect(screen.getByText(/Interactive Transcript/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/Ask a question about your speech/i)).not.toBeInTheDocument();
+
+    fireEvent.click(coachTab);
+
+    expect(screen.getByPlaceholderText(/Ask a question about your speech/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Interactive Transcript/i)).not.toBeInTheDocument();
+
+    // And back again, proving onChange is wired in both directions.
+    fireEvent.click(transcriptTab);
+    expect(screen.getByText(/Interactive Transcript/i)).toBeInTheDocument();
   });
 });
 

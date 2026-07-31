@@ -152,6 +152,14 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                         rows={1}
                         disabled={isLoading}
                     />
+                    {/* Deliberately NOT migrated to <Button>. This is an icon-only,
+                        absolutely-positioned, borderless affordance overlaid on the
+                        textarea: it needs `p-2` (not the base `px-4 py-2`), `rounded-lg`
+                        (not `rounded-xl`), and a disabled treatment (`text-gray-300`, no
+                        hover) that no Button variant expresses. Routing it through Button
+                        would mean overriding most of Button's base styles, which is worse
+                        than leaving it raw. Revisit once Button grows an `icon` size /
+                        variant. */}
                     <button
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}

@@ -21,7 +21,7 @@ export default function AnalyzerForm({
     return (
         <form onSubmit={handleSubmit}>
             <label
-                htmlFor="audioFile"
+                htmlFor="audio-upload"
                 className="text-sm font-bold"
             >
                 Audio File<span className="text-amber-500">*</span>
@@ -78,10 +78,11 @@ export default function AnalyzerForm({
             <div className="mt-5">
                 {!projectId && (
                     <div className="mb-3">
-                        <label className="block text-sm font-bold mb-2">
+                        <label htmlFor="scenario-preset" className="block text-sm font-bold mb-2">
                             Scenario / Preset
                         </label>
                         <select
+                            id="scenario-preset"
                             value={selectedScenario}
                             onChange={handleScenarioChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"

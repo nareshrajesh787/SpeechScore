@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import AuthButton from './AuthButton.jsx';
+import Button from './ui/Button';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase.js';
 
@@ -25,9 +26,13 @@ export default function Navbar() {
                                 Dashboard
                             </Link>
                         )}
-                        <Link to={"/analyze"} className="bg-indigo-600 text-white font-medium px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base rounded-full hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg">
+                        <Button
+                            as={Link}
+                            to={"/analyze"}
+                            className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base rounded-full shadow-md hover:shadow-lg"
+                        >
                             Analyze
-                        </Link>
+                        </Button>
                         <AuthButton />
                     </div>
                 </div>
