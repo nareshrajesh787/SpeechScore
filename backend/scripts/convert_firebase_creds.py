@@ -4,7 +4,7 @@ Helper script to convert Firebase credentials JSON file to a single-line string
 for use in Railway environment variables.
 
 Usage:
-    python convert_firebase_creds.py path/to/firebase-credentials.json
+    python backend/scripts/convert_firebase_creds.py path/to/firebase-credentials.json
 
 Output: A single-line JSON string ready to paste into Railway's FIREBASE_CREDENTIALS_JSON variable
 """
@@ -45,9 +45,9 @@ def convert_to_single_line(json_file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python convert_firebase_creds.py <path-to-firebase-credentials.json>")
+        print("Usage: python backend/scripts/convert_firebase_creds.py <path-to-firebase-credentials.json>")
         print("\nExample:")
-        print("  python convert_firebase_creds.py speechscore-4df8f-firebase-adminsdk-fbsvc-67747fe552.json")
+        print("  python backend/scripts/convert_firebase_creds.py speechscore-4df8f-firebase-adminsdk-fbsvc-67747fe552.json")
         sys.exit(1)
 
     convert_to_single_line(sys.argv[1])

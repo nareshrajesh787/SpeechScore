@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from schemas import CoachRequest, CoachResponse
 from gemini import chat_with_coach
+from firebase import get_current_user
 
 router = APIRouter(
     prefix="/api/coach",
@@ -9,7 +10,7 @@ router = APIRouter(
 )
 
 @router.post("/chat", response_model=CoachResponse)
-async def chat(request: CoachRequest):
+async def chat(request: CoachRequest, user = Depends(get_current_user)):
     """
     Chat with the AI Speech Coach.
     """

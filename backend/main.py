@@ -14,6 +14,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+APP_VERSION = "2.0.0"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup validation
@@ -29,7 +31,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SpeechScore API",
     description="AI-powered speech analysis API",
-    version="2.0.0",
+    version=APP_VERSION,
     lifespan=lifespan
 )
 
@@ -57,7 +59,7 @@ async def root():
     return {
         "message": "SpeechScore API",
         "status": "running",
-        "version": "2.0.0",
+        "version": APP_VERSION,
         "endpoints": {
             "health": "/api/health",
             "analyze": "/api/analyze"

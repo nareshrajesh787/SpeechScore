@@ -12,8 +12,11 @@ class WordTiming(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     """Request schema for audio analysis endpoint."""
+    audio_url: str
     prompt: str
     rubric: str
+    recording_id: str
+    project_id: Optional[str] = None
 
 
 class AIFeedback(BaseModel):
