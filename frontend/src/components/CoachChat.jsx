@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { API_URL } from "../config";
+import { auth } from "../firebase";
 
 export default function CoachChat({ transcript, rubricFeedback }) {
     const [messages, setMessages] = useState([]);
@@ -41,10 +42,13 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                 ? rubricFeedback
                 : JSON.stringify(rubricFeedback);
 
+            const token = await auth.currentUser.getIdToken(true);
+
             const response = await fetch(`${API_URL}/api/coach/chat`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     transcript: transcript,

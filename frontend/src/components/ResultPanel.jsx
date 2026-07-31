@@ -2,9 +2,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
+import { motion } from 'framer-motion';
 
 import InteractiveTranscript from "./InteractiveTranscript";
 import CoachChat from "./CoachChat";
+import { getRubricScoreEntries } from "../utils/normalizeRecording";
 
 export default function ResultPanel({ result, onSave, onTryAgain }) {
     const [isSaving, setIsSaving] = useState(false);
@@ -114,7 +116,12 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
     const filteredResult = getFilteredFeedback();
 
     return (
-        <div className="bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 space-y-6 font-medium border border-indigo-100">
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 space-y-6 font-medium border border-indigo-100"
+        >
             {/*TOP BAR*/}
             <div className="flex justify-between items-center text-sm text-gray-400">
                 <p>
@@ -389,30 +396,18 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
 
                             {/* RUBRIC SCORES */}
                             <div className="grid gap-y-2 items-center text-md text-gray-700">
-                                {Object.entries(filteredResult.rubric_scores).map(
-                                    ([key, value], i) => {
-                                        let score, max;
-                                        if (typeof value === 'object' && value !== null && 'score' in value) {
-                                            score = value.score;
-                                            max = value.max_score;
-                                        } else {
-                                            // Legacy format support
-                                            score = value;
-                                            max = 5; // Fallback
-                                        }
-
-                                        return (
-                                            <div
-                                                key={i}
-                                                className="flex justify-between items-center w-full"
-                                            >
-                                                <span>{key}</span>
-                                                <span className="font-semibold text-gray-800">
-                                                    {score}/{max}
-                                                </span>
-                                            </div>
-                                        );
-                                    }
+                                {getRubricScoreEntries(filteredResult.rubric_scores).map(
+                                    ({ criterion, score, max }, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex justify-between items-center w-full"
+                                        >
+                                            <span>{criterion}</span>
+                                            <span className="font-semibold text-gray-800">
+                                                {score}/{max}
+                                            </span>
+                                        </div>
+                                    )
                                 )}
                             </div>
 
@@ -429,6 +424,6 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

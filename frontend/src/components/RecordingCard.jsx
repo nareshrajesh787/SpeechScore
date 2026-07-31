@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from './ui/Card';
+import { getAiFeedback, getFillerTotal } from '../utils/normalizeRecording';
 
 const RecordingCard = ({
     recording,
@@ -26,17 +27,10 @@ const RecordingCard = ({
         : "—";
 
     // Normalize filler count
-    const fillerCountVal = recording.filler_count;
-    const totalFillers = typeof fillerCountVal === 'object' && fillerCountVal !== null
-        ? Object.values(fillerCountVal).reduce((sum, count) => sum + count, 0)
-        : (typeof fillerCountVal === 'number' ? fillerCountVal : "—");
+    const totalFillers = getFillerTotal(recording.filler_count) ?? "—";
 
     // Normalize arrays
-    const rawStrengths = recording.ai_feedback?.strengths || recording.strengths || [];
-    const strengths = Array.isArray(rawStrengths) ? rawStrengths : [];
-
-    const rawImprovements = recording.ai_feedback?.improvements || recording.improvements || [];
-    const improvements = Array.isArray(rawImprovements) ? rawImprovements : [];
+    const { strengths } = getAiFeedback(recording);
 
     const transcriptSnippet = (recording.transcript || "").slice(0, 160);
     const hasMoreTranscript = (recording.transcript || "").length > 160;

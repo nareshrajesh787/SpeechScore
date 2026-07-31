@@ -11,6 +11,7 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import RecordingCard from './RecordingCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { motion } from 'framer-motion';
 
 export default function Dashboard() {
     const [user, loading, error] = useAuthState(auth);
@@ -79,6 +80,7 @@ export default function Dashboard() {
                 description: newProjectDescription.trim() || '',
                 rubricPreset: newProjectRubricPreset,
                 createdAt: Timestamp.now(),
+                uid: user.uid,
             });
             setShowNewProjectModal(false);
             setNewProjectName('');
@@ -89,6 +91,21 @@ export default function Dashboard() {
             console.error('Error creating project:', error);
             alert('Failed to create project');
         }
+    };
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
     };
 
     if (loading) {
@@ -159,37 +176,43 @@ export default function Dashboard() {
                 {projects.length > 0 && (
                     <div className="mb-8">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">Projects</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <motion.div 
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                             {projects.map((project) => (
-                                <Card
-                                    as={Link}
-                                    key={project.id}
-                                    to={`/project/${project.id}`}
-                                    className="block hover:border-indigo-200 p-6"
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
-                                        <FontAwesomeIcon icon="folder" className="text-indigo-500" />
-                                    </div>
-                                    {project.description && (
-                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
-                                    )}
-                                    <div className="flex items-center justify-between text-sm text-gray-500">
-                                        <span>
-                                            <FontAwesomeIcon icon="file-audio" className="mr-1" />
-                                            {project.recordingCount || 0} recording{project.recordingCount !== 1 ? 's' : ''}
-                                        </span>
-                                        {project.createdAt && (
-                                            <span>
-                                                {project.createdAt.toDate ?
-                                                    project.createdAt.toDate().toLocaleDateString() :
-                                                    'Recent'}
-                                            </span>
+                                <motion.div key={project.id} variants={itemVariants}>
+                                    <Card
+                                        as={Link}
+                                        to={`/project/${project.id}`}
+                                        className="block hover:border-indigo-200 p-6 h-full"
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
+                                            <FontAwesomeIcon icon="folder" className="text-indigo-500" />
+                                        </div>
+                                        {project.description && (
+                                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
                                         )}
-                                    </div>
-                                </Card>
+                                        <div className="flex items-center justify-between text-sm text-gray-500 mt-auto">
+                                            <span>
+                                                <FontAwesomeIcon icon="file-audio" className="mr-1" />
+                                                {project.recordingCount || 0} recording{project.recordingCount !== 1 ? 's' : ''}
+                                            </span>
+                                            {project.createdAt && (
+                                                <span>
+                                                    {project.createdAt.toDate ?
+                                                        project.createdAt.toDate().toLocaleDateString() :
+                                                        'Recent'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </Card>
+                                </motion.div>
                             ))}
-                        </div>
+                        </motion.div>
                     </div>
                 )}
 
@@ -197,44 +220,57 @@ export default function Dashboard() {
                 {feedback.length > 0 && (
                     <div className="mb-8">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Analyses</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <motion.div 
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                             {feedback.map((fb) => (
-                                <RecordingCard
-                                    key={fb.id}
-                                    recording={fb}
-                                    as="button"
-                                    onClick={() => setSelected(fb)}
-                                    className="bg-gradient-to-br from-white to-indigo-50/30"
-                                />
+                                <motion.div key={fb.id} variants={itemVariants}>
+                                    <RecordingCard
+                                        recording={fb}
+                                        as="button"
+                                        onClick={() => setSelected(fb)}
+                                        className="bg-gradient-to-br from-white to-indigo-50/30 w-full text-left"
+                                    />
+                                </motion.div>
                             ))}
-
-                            {projects.length === 0 && feedback.length === 0 ? (
-                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-12 shadow-sm text-center">
-                                    <div className="text-indigo-500 text-6xl mb-4">
-                                        <FontAwesomeIcon icon="chart-line" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-800 mb-2">Get Started</h3>
-                                    <p className="text-gray-600 mb-6">Create a project to organize your speech recordings, or do a quick analysis.</p>
-                                    <div className="flex gap-3 justify-center">
-                                        <button
-                                            onClick={() => setShowNewProjectModal(true)}
-                                            className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-medium hover:bg-indigo-700 transition shadow-md"
-                                        >
-                                            <FontAwesomeIcon icon="folder-plus" className="mr-2" />
-                                            Create Project
-                                        </button>
-                                        <Link
-                                            to="/analyze"
-                                            className="inline-block bg-purple-600 text-white px-6 py-3 rounded-full font-medium hover:bg-purple-700 transition shadow-md"
-                                        >
-                                            <FontAwesomeIcon icon="microphone" className="mr-2" />
-                                            Quick Analyze
-                                        </Link>
-                                    </div>
-                                </div>
-                            ) : null}
+                        </motion.div>
+                    </div>
+                )}
+                {projects.length === 0 && feedback.length === 0 && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                        className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-12 shadow-sm text-center max-w-2xl mx-auto my-12"
+                    >
+                        <div className="text-indigo-500 text-6xl mb-4">
+                            <FontAwesomeIcon icon="chart-line" />
                         </div>
-                        {/* New Project Modal */}
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">Get Started</h3>
+                        <p className="text-gray-600 mb-6">Create a project to organize your speech recordings, or do a quick analysis.</p>
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                onClick={() => setShowNewProjectModal(true)}
+                                className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-medium hover:bg-indigo-700 transition shadow-md"
+                            >
+                                <FontAwesomeIcon icon="folder-plus" className="mr-2" />
+                                Create Project
+                            </button>
+                            <Link
+                                to="/analyze"
+                                className="inline-block bg-purple-600 text-white px-6 py-3 rounded-full font-medium hover:bg-purple-700 transition shadow-md"
+                            >
+                                <FontAwesomeIcon icon="microphone" className="mr-2" />
+                                Quick Analyze
+                            </Link>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* New Project Modal */}
                         {showNewProjectModal && (
                             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowNewProjectModal(false)}>
                                 <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
@@ -327,8 +363,6 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         )}
-                    </div>
-                )}
             </div>
         </div>
     );
