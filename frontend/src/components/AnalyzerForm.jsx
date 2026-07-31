@@ -51,7 +51,7 @@ export default function AnalyzerForm({
                             ? audioFile.name
                             : "Click or drag to upload .mp3, .wav"}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                         Max 20MB
                     </p>
                 </label>

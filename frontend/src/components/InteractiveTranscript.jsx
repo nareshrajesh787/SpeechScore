@@ -65,13 +65,20 @@ export default function InteractiveTranscript({
 
     const handleWordClick = (wordIndex) => {
         if (!wordTimestamps || !audioRef.current) return;
-        
+
         const word = wordTimestamps[wordIndex];
         if (word) {
             audioRef.current.currentTime = word.start / 1000; // Convert ms to seconds
             if (!isPlaying) {
                 audioRef.current.play();
             }
+        }
+    };
+
+    const handleWordKeyDown = (e, wordIndex) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleWordClick(wordIndex);
         }
     };
 
@@ -123,6 +130,7 @@ export default function InteractiveTranscript({
 
                 const className = `
                     inline-block px-1 mx-0.5 rounded transition-all cursor-pointer
+                    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
                     ${isHighlighted ? 'bg-indigo-200 scale-105' : ''}
                     ${isFiller || isPair ? 'text-red-600 bg-red-50 border-b-2 border-red-200 hover:bg-red-100' : 'text-gray-700 hover:bg-indigo-50'}
                 `.trim();
@@ -132,8 +140,12 @@ export default function InteractiveTranscript({
                         key={index}
                         id={`word-${index}`}
                         className={className}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleWordClick(index)}
+                        onKeyDown={(e) => handleWordKeyDown(e, index)}
                         title={`Click to play from "${displayText}" (${(word.start / 1000).toFixed(2)}s)`}
+                        aria-label={`Play from "${displayText}" at ${(word.start / 1000).toFixed(2)} seconds`}
                     >
                         {displayText}
                     </span>

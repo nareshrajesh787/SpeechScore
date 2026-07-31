@@ -105,7 +105,7 @@ const RecordingCard = ({
                         e.stopPropagation();
                         onDelete(recording);
                     }}
-                    className="absolute top-4 right-12 p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute top-4 right-12 p-2 text-gray-500 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                     title="Delete recording"
                 >
                     {/* Icon handled by parent or passed in? Keeping it simple for now, using text or finding icon */}

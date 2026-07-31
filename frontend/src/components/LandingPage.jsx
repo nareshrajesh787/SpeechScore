@@ -324,7 +324,7 @@ export default function LandingPage() {
             </div>
             <div className="w-full space-y-3">
               <AuthButton />
-              <button className="text-gray-400 hover:text-gray-600 text-sm w-full text-center py-2 transition-colors" onClick={() => setShowLogin(false)}>
+              <button className="text-gray-500 hover:text-gray-600 text-sm w-full text-center py-2 transition-colors" onClick={() => setShowLogin(false)}>
                 Cancel
               </button>
             </div>

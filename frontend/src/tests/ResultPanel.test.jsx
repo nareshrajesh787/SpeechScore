@@ -48,3 +48,30 @@ describe('ResultPanel rubric breakdown', () => {
     expect(screen.getByText('4/5')).toBeInTheDocument();
   });
 });
+
+describe('ResultPanel last analyzed timestamp', () => {
+  it('shows a formatted date (not "Just now") when result.createdAt is a Firestore Timestamp', () => {
+    const oldDate = new Date('2024-01-01');
+    render(<ResultPanel result={{
+      ...baseResult,
+      rubric_scores: { Clarity: { score: 8, max_score: 10 } },
+      rubric_total: 15,
+      rubric_max: 20,
+      createdAt: { toDate: () => oldDate },
+    }} />);
+
+    expect(screen.queryByText(/Just now/)).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(oldDate.toLocaleString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument();
+  });
+
+  it('falls back to "Just now" without crashing when neither createdAt nor timestamp is present', () => {
+    render(<ResultPanel result={{
+      ...baseResult,
+      rubric_scores: { Clarity: { score: 8, max_score: 10 } },
+      rubric_total: 15,
+      rubric_max: 20,
+    }} />);
+
+    expect(screen.getByText(/Just now/)).toBeInTheDocument();
+  });
+});

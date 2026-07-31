@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase';
@@ -31,7 +31,23 @@ export default function SpeechAnalyzerPage() {
     const [presetName, setPresetName] = useState(null);
     const [selectedScenario, setSelectedScenario] = useState('General Speaking');
     const [error, setError] = useState(null);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const navigate = useNavigate();
+
+    const timeoutRef = useRef(null);
+    const intervalRef = useRef(null);
+    const unsubscribeRef = useRef(null);
+
+    // Analysis can be a background task that outlives a page navigation, so
+    // make sure the timer/interval/listener from an in-flight run don't leak
+    // if the user navigates away mid-analysis.
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (unsubscribeRef.current) unsubscribeRef.current();
+        };
+    }, []);
 
     useEffect(() => {
         const pid = searchParams.get('projectId');
@@ -130,8 +146,14 @@ export default function SpeechAnalyzerPage() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (audioFile) {
+            // Clear any leftover timers/listener from a prior run before starting a new one.
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+
             setIsLoading(true);
             setError(null);
+            setElapsedSeconds(0);
             setIsUploadingAudio(true);
 
             try {
@@ -206,25 +228,51 @@ export default function SpeechAnalyzerPage() {
                     throw new Error(msg);
                 }
                 
-                // 3. Setup snapshot listener for completion
+                // 3. Setup snapshot listener for completion, with an elapsed-time
+                //    counter and a hard timeout so a stuck background task
+                //    doesn't leave the UI spinning forever.
+                intervalRef.current = setInterval(() => {
+                    setElapsedSeconds((prev) => prev + 1);
+                }, 1000);
+
+                const ANALYSIS_TIMEOUT_MS = 4 * 60 * 1000; // 4 minutes
+                const stopWaiting = () => {
+                    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+                    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+                };
+
+                timeoutRef.current = setTimeout(() => {
+                    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+                    stopWaiting();
+                    setError("Analysis is taking longer than expected. This can happen with longer recordings, or something may have gone wrong on our end. Please try again.");
+                    setIsLoading(false);
+                }, ANALYSIS_TIMEOUT_MS);
+
                 const unsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         if (data.status === 'completed') {
+                            stopWaiting();
                             setResult(data);
                             setIsLoading(false);
                             unsubscribe();
+                            unsubscribeRef.current = null;
                         } else if (data.status === 'error') {
+                            stopWaiting();
                             setError(data.error_message || "An error occurred during analysis.");
                             setIsLoading(false);
                             unsubscribe();
+                            unsubscribeRef.current = null;
                         }
                     }
                 }, (err) => {
+                    stopWaiting();
                     console.error("Firestore listener error:", err);
                     setError("Failed to listen for analysis results.");
                     setIsLoading(false);
+                    unsubscribeRef.current = null;
                 });
+                unsubscribeRef.current = unsubscribe;
 
             } catch (error) {
                 console.error('Error during analysis:', error);
@@ -268,6 +316,22 @@ export default function SpeechAnalyzerPage() {
                             <div>
                                 <p className="font-semibold text-sm">Analysis Failed</p>
                                 <p className="text-sm opacity-90">{error}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {isLoading && (
+                        <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 flex items-start gap-3">
+                            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mt-1 flex-shrink-0"></div>
+                            <div>
+                                <p className="font-semibold text-sm">
+                                    {isUploadingAudio ? 'Uploading your recording…' : 'Analyzing your speech…'}
+                                </p>
+                                <p className="text-sm opacity-90">
+                                    {isUploadingAudio
+                                        ? 'This should only take a few seconds.'
+                                        : `This can take a minute or two for longer recordings. ${elapsedSeconds}s elapsed.`}
+                                </p>
                             </div>
                         </div>
                     )}

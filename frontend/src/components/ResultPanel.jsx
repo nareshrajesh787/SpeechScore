@@ -115,6 +115,12 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
 
     const filteredResult = getFilteredFeedback();
 
+    const getLastAnalyzedLabel = () => {
+        const date = result.createdAt?.toDate ? result.createdAt.toDate() :
+            (result.timestamp?.toDate ? result.timestamp.toDate() : null);
+        return date ? date.toLocaleString() : "Just now";
+    };
+
     return (
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -123,10 +129,10 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
             className="bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 space-y-6 font-medium border border-indigo-100"
         >
             {/*TOP BAR*/}
-            <div className="flex justify-between items-center text-sm text-gray-400">
+            <div className="flex justify-between items-center text-sm text-gray-500">
                 <p>
                     <FontAwesomeIcon icon={["far", "clock"]} className="me-1" />{" "}
-                    Last analyzed: Just now
+                    Last analyzed: {getLastAnalyzedLabel()}
                 </p>
                 <div className="flex items-center gap-4">
                     {onTryAgain && (
@@ -232,7 +238,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                         <p className="text-2xl font-bold text-gray-800">
                             {result.wpm}
                         </p>
-                        <p className="text-xs text-gray-400">Words/min</p>
+                        <p className="text-xs text-gray-500">Words/min</p>
                     </div>
                     <div className="w-full h-2 bg-indigo-100 rounded-full mt-2 relative overflow-hidden">
                         <div
@@ -263,7 +269,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                                 0
                             )}
                         </p>
-                        <p className="text-xs text-gray-400">total</p>
+                        <p className="text-xs text-gray-500">total</p>
                     </div>
                     <div className="text-xs text-gray-500 mt-2 mb-2 flex justify-start gap-2 flex-wrap">
                         {Object.entries(result.filler_count).map(
@@ -292,7 +298,7 @@ export default function ResultPanel({ result, onSave, onTryAgain }) {
                         <p className="text-2xl font-bold text-gray-800">
                             {result.clarity_score}
                         </p>
-                        <p className="text-xs text-gray-400 me-2">/10</p>
+                        <p className="text-xs text-gray-500 me-2">/10</p>
                         <div className="flex text-lg items-center">
                             {[...Array(5)].map((_, i) => (
                                 <FontAwesomeIcon

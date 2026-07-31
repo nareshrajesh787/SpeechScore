@@ -176,7 +176,7 @@ export default function TrendCharts({ recordings }) {
                         Clarity Score
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
-                        Speech clarity score (0-100 scale)
+                        Speech clarity score (0-10 scale)
                     </p>
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
@@ -190,7 +190,7 @@ export default function TrendCharts({ recordings }) {
                         <YAxis
                             stroke="#6b7280"
                             style={{ fontSize: '12px' }}
-                            domain={[0, 100]}
+                            domain={[0, 10]}
                             label={{ value: 'Clarity', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
                         />
                         <Tooltip content={<CustomTooltip />} />
