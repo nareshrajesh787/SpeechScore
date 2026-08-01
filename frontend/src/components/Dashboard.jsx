@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { collection, query, getDocs, where, addDoc, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
+import { formatRelativeDate } from '../utils/formatDate';
 import Navbar from './Navbar';
 import ResultPanel from './ResultPanel';
 import Card from './ui/Card';
@@ -141,12 +142,12 @@ export default function Dashboard() {
         <div className="bg-zinc-50 min-h-screen">
             <Navbar />
             <div className="max-w-6xl mx-auto px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.displayName}</h1>
                         <p className="text-gray-600 mt-1">Your projects and analyses</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                         <Button
                             variant="primary"
                             onClick={() => setShowNewProjectModal(true)}
@@ -182,7 +183,7 @@ export default function Dashboard() {
                                     <Card
                                         as={Link}
                                         to={`/project/${project.id}`}
-                                        className="block hover:border-indigo-200 p-6 h-full"
+                                        className="flex flex-col hover:border-indigo-200 p-6 h-full"
                                     >
                                         <div className="flex items-start justify-between mb-3">
                                             <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
@@ -197,9 +198,9 @@ export default function Dashboard() {
                                                 {project.recordingCount || 0} recording{project.recordingCount !== 1 ? 's' : ''}
                                             </span>
                                             {project.createdAt && (
-                                                <span>
+                                                <span title={project.createdAt.toDate ? project.createdAt.toDate().toLocaleString() : undefined}>
                                                     {project.createdAt.toDate ?
-                                                        project.createdAt.toDate().toLocaleDateString() :
+                                                        formatRelativeDate(project.createdAt.toDate()) :
                                                         'Recent'}
                                                 </span>
                                             )}

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import RecordingCard from '../components/RecordingCard';
 
@@ -53,5 +53,37 @@ describe('RecordingCard draft numbering', () => {
   it('still honors isDraft/draftNumber set directly on the recording object', () => {
     render(<RecordingCard recording={{ isDraft: true, draftNumber: 1 }} />);
     expect(screen.getByText('Draft 1')).toBeInTheDocument();
+  });
+});
+
+describe('RecordingCard delete button', () => {
+  // Regression coverage for a mobile-usability bug: the delete button used to
+  // be `opacity-0 group-hover:opacity-100`, making it permanently unreachable
+  // on touch devices (no hover state). It must always be visible and meet the
+  // ~44px minimum tap target.
+  it('is visible without hovering, and calls onDelete without triggering onClick', () => {
+    const onClick = vi.fn();
+    const onDelete = vi.fn();
+    const recording = { id: 'r1' };
+    render(<RecordingCard recording={recording} onClick={onClick} onDelete={onDelete} />);
+
+    const deleteButton = screen.getByTitle('Delete recording');
+    expect(deleteButton.className).not.toContain('opacity-0');
+
+    fireEvent.click(deleteButton);
+    expect(onDelete).toHaveBeenCalledWith(recording);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('meets the 44px minimum tap target via padding around a 16px icon', () => {
+    render(<RecordingCard recording={{}} onDelete={vi.fn()} />);
+    const deleteButton = screen.getByTitle('Delete recording');
+    // p-3.5 (14px) padding on each side of a w-4/h-4 (16px) icon = 44px.
+    expect(deleteButton.className).toContain('p-3.5');
+  });
+
+  it('does not render a delete button when onDelete is not provided', () => {
+    render(<RecordingCard recording={{}} />);
+    expect(screen.queryByTitle('Delete recording')).not.toBeInTheDocument();
   });
 });

@@ -144,7 +144,7 @@ export default function ProjectView() {
             <div className="max-w-5xl mx-auto px-4 py-8">
                 {/* Project Header */}
                 <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <div>
                             <Link
                                 to="/dashboard"
@@ -162,7 +162,7 @@ export default function ProjectView() {
                             as={Link}
                             to={`/analyze?projectId=${projectId}`}
                             variant="primary"
-                            className="px-6 py-3"
+                            className="px-6 py-3 self-start"
                         >
                             <FontAwesomeIcon icon="plus" />
                             New Recording

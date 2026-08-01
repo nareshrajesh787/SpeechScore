@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
 import Button from './ui/Button';
+
+const isAudioFile = (file) => file && (file.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|webm|aac|flac)$/i.test(file.name));
 
 export default function AnalyzerForm({
     audioFile,
@@ -18,6 +20,25 @@ export default function AnalyzerForm({
     isUploadingAudio,
     handleSubmit
 }) {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files?.[0];
+        if (isAudioFile(file)) setAudioFile(file);
+    };
+
     return (
         <form onSubmit={handleSubmit}>
             <label
@@ -26,7 +47,16 @@ export default function AnalyzerForm({
             >
                 Audio File<span className="text-amber-500">*</span>
             </label>
-            <div className="border-indigo-300 group border-2 border-dashed rounded-xl p-6 mt-2 text-gray-500 text-center hover:bg-indigo-50 cursor-pointer">
+            <div
+                data-testid="audio-dropzone"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`group border-2 border-dashed rounded-xl p-6 mt-2 text-center cursor-pointer transition-colors ${isDragging
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-indigo-300 text-gray-500 hover:bg-indigo-50'
+                    }`}
+            >
                 <input
                     type="file"
                     id="audio-upload"
@@ -129,11 +159,8 @@ export default function AnalyzerForm({
                     "Uploading Audio..."
                 ) : (
                     <>
-                        Analyze Speech{" "}
-                        <FontAwesomeIcon
-                            className="mr-2"
-                            icon="arrow-right"
-                        />
+                        Analyze Speech
+                        <FontAwesomeIcon icon="arrow-right" />
                     </>
                 )}
             </Button>
