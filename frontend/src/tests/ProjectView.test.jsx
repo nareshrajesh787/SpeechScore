@@ -203,22 +203,60 @@ describe('ProjectView', () => {
     expect(screen.getByText('Loading project...')).toBeInTheDocument();
   });
 
-  // KNOWN PRE-EXISTING BUG (predates the design-system migration, see HEAD):
-  // `loadingData` is initialized to `true` and only ever cleared inside the
-  // fetch effect, which early-returns when there is no user. Because the
-  // `loading || loadingData` guard is checked *before* the `!user` guard, a
-  // signed-out visitor is pinned on the spinner forever and the SignInGate
-  // branch is unreachable. This test pins the current behavior; flip it to
-  // assert the gate once the guard order / loadingData init is fixed. Fixing
-  // it is a state-management change, out of scope for this presentational pass.
-  it('currently shows the spinner (not the sign-in gate) when there is no user', async () => {
+  // Regression guard for a fixed bug: `loadingData` is initialized to `true`
+  // and only ever cleared inside the fetch effect, which early-returns when
+  // there is no user. The `!user` guard must be checked before `loadingData`
+  // (not after it) or a signed-out visitor is pinned on the spinner forever
+  // and never sees the sign-in gate.
+  it('shows the sign-in gate (not a permanent spinner) when there is no user', async () => {
     authState.current = [null, false, undefined];
 
     renderProjectView();
 
     await waitFor(() => {
-      expect(screen.getByTestId('spinner')).toBeInTheDocument();
+      expect(screen.getByText('Sign in Required')).toBeInTheDocument();
     });
-    expect(screen.queryByText('Sign in Required')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('spinner')).not.toBeInTheDocument();
+  });
+
+  it('numbers undraft recordings by chronological attempt, oldest first', async () => {
+    // getDocs already returns newest-first (orderBy createdAt desc is mocked
+    // away, but the fixture order stands in for it): 'a' is the newer take,
+    // 'b' the older one, so 'b' should be Draft 1 and 'a' should be Draft 2.
+    firestoreState.recordings = [
+      makeRecording('a', { name: undefined }),
+      makeRecording('b', { name: undefined }),
+    ];
+
+    renderProjectView();
+
+    await waitFor(() => {
+      expect(screen.getByText('Draft 2')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Draft 1')).toBeInTheDocument();
+  });
+
+  it('replaces the native confirm() with an accessible delete-confirmation modal', async () => {
+    firestoreState.recordings = [makeRecording('a')];
+
+    renderProjectView();
+
+    await waitFor(() => {
+      expect(screen.getByText('Draft a')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Delete Recording?')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle('Delete recording'));
+
+    expect(await screen.findByText('Delete Recording?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Delete Recording?')).not.toBeInTheDocument();
+    });
+    // Cancelling must not have deleted anything.
+    expect(screen.getByText('Draft a')).toBeInTheDocument();
   });
 });

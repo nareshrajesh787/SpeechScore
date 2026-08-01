@@ -31,7 +31,9 @@ import {
     faArrowLeft,
     faList,
     faMicrophoneSlash,
-    faTrash
+    faTrash,
+    faCircleExclamation,
+    faLock
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -73,5 +75,7 @@ library.add(
     faArrowLeft,
     faList,
     faMicrophoneSlash,
-    faTrash
+    faTrash,
+    faCircleExclamation,
+    faLock
 );

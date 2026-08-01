@@ -33,6 +33,8 @@ export default function ProjectView() {
     const [loadingData, setLoadingData] = useState(true);
     const [selectedRecording, setSelectedRecording] = useState(null);
     const [activeTab, setActiveTab] = useState('recordings'); // 'recordings' or 'trends'
+    const [recordingPendingDelete, setRecordingPendingDelete] = useState(null);
+    const [deleteError, setDeleteError] = useState(null);
 
     useEffect(() => {
         if (!user || !projectId) return;
@@ -76,8 +78,15 @@ export default function ProjectView() {
         fetchProjectData();
     }, [user, projectId, navigate]);
 
-    const handleDeleteRecording = async (recording) => {
-        if (!confirm('Are you sure you want to delete this recording? This action cannot be undone.')) return;
+    const handleDeleteRecording = (recording) => {
+        setDeleteError(null);
+        setRecordingPendingDelete(recording);
+    };
+
+    const confirmDeleteRecording = async () => {
+        const recording = recordingPendingDelete;
+        if (!recording) return;
+        setRecordingPendingDelete(null);
 
         try {
             await deleteRecordingUtil(
@@ -93,16 +102,24 @@ export default function ProjectView() {
             }
         } catch (error) {
             console.error('Error deleting recording:', error);
-            alert('Failed to delete recording. Please try again.');
+            setDeleteError('Failed to delete recording. Please try again.');
         }
     };
 
-    if (loading || loadingData) {
+    // Order matters here: `loadingData`'s fetch effect bails out early when
+    // `!user` (see above) without ever calling setLoadingData(false), so a
+    // signed-out visitor would be stuck on this spinner forever if `!user`
+    // were checked after `loadingData` instead of before it.
+    if (loading) {
         return <Spinner size="lg" label="Loading project..." fullScreen />;
     }
 
     if (!user) {
         return <SignInGate message="Sign in to view your projects." />;
+    }
+
+    if (loadingData) {
+        return <Spinner size="lg" label="Loading project..." fullScreen />;
     }
 
     if (!project) {
@@ -153,6 +170,13 @@ export default function ProjectView() {
                     </div>
                 </div>
 
+                {deleteError && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-start gap-3">
+                        <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
+                        <p className="text-sm">{deleteError}</p>
+                    </div>
+                )}
+
                 {/* Tabs */}
                 {recordings.length > 0 && (
                     <Tabs
@@ -190,10 +214,15 @@ export default function ProjectView() {
                             </EmptyState>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {recordings.map((recording) => (
+                                {/* Recordings are fetched newest-first (orderBy createdAt desc),
+                                    so draft numbering counts up from the oldest: draft 1 is the
+                                    first attempt, draft N is the most recent. */}
+                                {recordings.map((recording, index) => (
                                     <RecordingCard
                                         key={recording.id}
                                         recording={recording}
+                                        isDraft={!recording.name}
+                                        draftNumber={recordings.length - index}
                                         onClick={() => setSelectedRecording(recording)}
                                         onDelete={handleDeleteRecording}
                                         showDelete={true}
@@ -218,6 +247,29 @@ export default function ProjectView() {
                             </button>
                             <div className="overflow-y-auto max-h-[90vh]">
                                 <ResultPanel result={selectedRecording} />
+                            </div>
+                        </Modal>
+
+                        {/* Delete Confirmation Modal */}
+                        <Modal
+                            isOpen={!!recordingPendingDelete}
+                            onClose={() => setRecordingPendingDelete(null)}
+                            className="p-8 flex flex-col gap-4 items-center max-w-md w-full"
+                            labelledBy="delete-recording-heading"
+                        >
+                            <h3 id="delete-recording-heading" className="text-xl font-bold text-gray-800 text-center">
+                                Delete Recording?
+                            </h3>
+                            <p className="text-gray-500 text-center">
+                                Are you sure you want to delete this recording? This action cannot be undone.
+                            </p>
+                            <div className="flex flex-col gap-3 w-full">
+                                <Button variant="danger" className="w-full justify-center" onClick={confirmDeleteRecording}>
+                                    Delete Recording
+                                </Button>
+                                <Button variant="subtle" className="w-full justify-center" onClick={() => setRecordingPendingDelete(null)}>
+                                    Cancel
+                                </Button>
                             </div>
                         </Modal>
                     </>

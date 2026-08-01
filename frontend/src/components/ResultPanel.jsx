@@ -12,7 +12,6 @@ import Tabs from "./ui/Tabs";
 import { getRubricScoreEntries } from "../utils/normalizeRecording";
 
 export default function ResultPanel({ result, onTryAgain }) {
-    const [filter, setFilter] = useState('all'); // 'all', 'fillers', 'pace', 'clarity'
     const [activeTab, setActiveTab] = useState('transcript'); // 'transcript', 'coach'
 
     if (!result) {
@@ -28,76 +27,6 @@ export default function ResultPanel({ result, onTryAgain }) {
     const handleTryAgain = () => {
         if (onTryAgain) onTryAgain();
     };
-
-    const getFilteredFeedback = () => {
-        if (filter === 'all') return result;
-
-        const filtered = { ...result };
-
-        if (filter === 'fillers') {
-            // Show only filler word related feedback
-            return {
-                ...filtered,
-                ai_feedback: {
-                    strengths: filtered.ai_feedback.strengths.filter(s =>
-                        s.toLowerCase().includes('filler') ||
-                        s.toLowerCase().includes('um') ||
-                        s.toLowerCase().includes('uh')
-                    ),
-                    improvements: filtered.ai_feedback.improvements.filter(i =>
-                        i.toLowerCase().includes('filler') ||
-                        i.toLowerCase().includes('um') ||
-                        i.toLowerCase().includes('uh')
-                    )
-                }
-            };
-        }
-
-        if (filter === 'pace') {
-            // Show only pace related feedback
-            return {
-                ...filtered,
-                ai_feedback: {
-                    strengths: filtered.ai_feedback.strengths.filter(s =>
-                        s.toLowerCase().includes('pace') ||
-                        s.toLowerCase().includes('speed') ||
-                        s.toLowerCase().includes('rate')
-                    ),
-                    improvements: filtered.ai_feedback.improvements.filter(i =>
-                        i.toLowerCase().includes('pace') ||
-                        i.toLowerCase().includes('speed') ||
-                        i.toLowerCase().includes('rate') ||
-                        i.toLowerCase().includes('slow') ||
-                        i.toLowerCase().includes('fast')
-                    )
-                }
-            };
-        }
-
-        if (filter === 'clarity') {
-            // Show only clarity related feedback
-            return {
-                ...filtered,
-                ai_feedback: {
-                    strengths: filtered.ai_feedback.strengths.filter(s =>
-                        s.toLowerCase().includes('clear') ||
-                        s.toLowerCase().includes('articulate') ||
-                        s.toLowerCase().includes('pronunciation')
-                    ),
-                    improvements: filtered.ai_feedback.improvements.filter(i =>
-                        i.toLowerCase().includes('clear') ||
-                        i.toLowerCase().includes('articulate') ||
-                        i.toLowerCase().includes('pronunciation') ||
-                        i.toLowerCase().includes('enunciate')
-                    )
-                }
-            };
-        }
-
-        return filtered;
-    };
-
-    const filteredResult = getFilteredFeedback();
 
     const getLastAnalyzedLabel = () => {
         const date = result.createdAt?.toDate ? result.createdAt.toDate() :
@@ -130,24 +59,6 @@ export default function ResultPanel({ result, onTryAgain }) {
                         </Button>
                     )}
                 </div>
-            </div>
-
-            {/*FILTER DROPDOWN*/}
-            <div className="flex items-center justify-between">
-                <h2 className="font-bold text-lg text-gray-800">
-                    <FontAwesomeIcon icon="filter" className="text-indigo-600 mr-2" />
-                    Filter Analysis
-                </h2>
-                <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="all">All Feedback</option>
-                    <option value="fillers">Filler Words</option>
-                    <option value="pace">Pace & Speed</option>
-                    <option value="clarity">Clarity & Pronunciation</option>
-                </select>
             </div>
 
             {/* TABBED CONTENT AREA */}
@@ -289,11 +200,6 @@ export default function ResultPanel({ result, onTryAgain }) {
                         className="text-orange-400 me-1"
                     />{" "}
                     AI Generated Content Feedback
-                    {filter !== 'all' && (
-                        <span className="text-sm font-normal text-gray-500 ml-2">
-                            (Filtered: {filter})
-                        </span>
-                    )}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -308,16 +214,16 @@ export default function ResultPanel({ result, onTryAgain }) {
                                 />
                                 Key Strengths
                             </p>
-                            {filteredResult.ai_feedback.strengths.length > 0 ? (
+                            {result.ai_feedback.strengths.length > 0 ? (
                                 <ul className="list-disc ml-5 text-base text-gray-700 space-y-2">
-                                    {filteredResult.ai_feedback.strengths.map(
+                                    {result.ai_feedback.strengths.map(
                                         (point, i) => (
                                             <li key={i}>{point}</li>
                                         )
                                     )}
                                 </ul>
                             ) : (
-                                <p className="text-gray-500 text-sm italic">No strengths found for this filter.</p>
+                                <p className="text-gray-500 text-sm italic">No strengths listed.</p>
                             )}
                         </div>
 
@@ -330,16 +236,16 @@ export default function ResultPanel({ result, onTryAgain }) {
                                 />
                                 Areas to Improve
                             </p>
-                            {filteredResult.ai_feedback.improvements.length > 0 ? (
+                            {result.ai_feedback.improvements.length > 0 ? (
                                 <ul className="list-disc ml-5 text-base text-gray-700 space-y-2">
-                                    {filteredResult.ai_feedback.improvements.map(
+                                    {result.ai_feedback.improvements.map(
                                         (point, i) => (
                                             <li key={i}>{point}</li>
                                         )
                                     )}
                                 </ul>
                             ) : (
-                                <p className="text-gray-500 text-sm italic">No improvements found for this filter.</p>
+                                <p className="text-gray-500 text-sm italic">No improvements listed.</p>
                             )}
                         </div>
                     </div>
@@ -357,7 +263,7 @@ export default function ResultPanel({ result, onTryAgain }) {
 
                             {/* RUBRIC SCORES */}
                             <div className="grid gap-y-2 items-center text-base text-gray-700">
-                                {getRubricScoreEntries(filteredResult.rubric_scores).map(
+                                {getRubricScoreEntries(result.rubric_scores).map(
                                     ({ criterion, score, max }, i) => (
                                         <div
                                             key={i}
@@ -378,7 +284,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                                     Total Score:{" "}
                                 </span>
                                 <span className="font-bold text-lg text-indigo-600 bg-indigo-100 py-[0.15rem] px-1 rounded-md">
-                                    {filteredResult.rubric_total}/{filteredResult.rubric_max}
+                                    {result.rubric_total}/{result.rubric_max}
                                 </span>
                             </div>
                         </div>

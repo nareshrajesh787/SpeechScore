@@ -32,3 +32,26 @@ describe('RecordingCard shape normalization', () => {
     expect(screen.getByText('Clear structure')).toBeInTheDocument();
   });
 });
+
+describe('RecordingCard draft numbering', () => {
+  it('falls back to "Analysis" when neither a name nor draft props are given', () => {
+    render(<RecordingCard recording={{}} />);
+    expect(screen.getByText('Analysis')).toBeInTheDocument();
+  });
+
+  it('shows "Draft N" via explicit isDraft/draftNumber props', () => {
+    render(<RecordingCard recording={{}} isDraft draftNumber={3} />);
+    expect(screen.getByText('Draft 3')).toBeInTheDocument();
+  });
+
+  it('prefers an explicit recording.name over draft numbering', () => {
+    render(<RecordingCard recording={{ name: 'Final Pitch' }} isDraft draftNumber={3} />);
+    expect(screen.getByText('Final Pitch')).toBeInTheDocument();
+    expect(screen.queryByText('Draft 3')).not.toBeInTheDocument();
+  });
+
+  it('still honors isDraft/draftNumber set directly on the recording object', () => {
+    render(<RecordingCard recording={{ isDraft: true, draftNumber: 1 }} />);
+    expect(screen.getByText('Draft 1')).toBeInTheDocument();
+  });
+});

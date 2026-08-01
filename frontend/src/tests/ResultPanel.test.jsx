@@ -25,6 +25,25 @@ const baseResult = {
   ai_feedback: { strengths: ['Clear intro'], improvements: ['Slow down'] },
 };
 
+describe('ResultPanel filter removal', () => {
+  // The "Filter Analysis" dropdown only keyword-matched the AI feedback
+  // prose (not the actual metrics) and routinely produced confusing
+  // "No strengths found for this filter" results, so it was removed
+  // entirely. This guards against it coming back.
+  it('does not render the Filter Analysis dropdown', () => {
+    render(<ResultPanel result={{
+      ...baseResult,
+      rubric_scores: { Clarity: { score: 8, max_score: 10 } },
+      rubric_total: 15,
+      rubric_max: 20,
+    }} />);
+
+    expect(screen.queryByText(/Filter Analysis/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByText(/All Feedback/i)).not.toBeInTheDocument();
+  });
+});
+
 describe('ResultPanel rubric breakdown', () => {
   it('renders per-criterion scores for the current {score, max_score} shape', () => {
     render(<ResultPanel result={{

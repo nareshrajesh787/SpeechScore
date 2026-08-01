@@ -9,11 +9,16 @@ const RecordingCard = ({
     as = "div",
     selected = false,
     showDelete = false, // Optional: if we want to include delete button inside or handle externally
-    onDelete = null
+    onDelete = null,
+    isDraft, // Optional: explicit override. Falls back to recording.isDraft.
+    draftNumber, // Optional: explicit override. Falls back to recording.draftNumber.
 }) => {
     // Determine data source (handle potential differences between raw firestore data and formatted data)
     const date = recording.createdAt?.toDate ? recording.createdAt.toDate().toLocaleString() :
         (recording.timestamp?.toDate ? recording.timestamp.toDate().toLocaleString() : "");
+
+    const showAsDraft = isDraft ?? recording.isDraft;
+    const resolvedDraftNumber = draftNumber ?? recording.draftNumber;
 
     // Handle different naming conventions (Dashboard uses 'feedback' array with slightly different structure vs ProjectView)
     // We'll normalize to the structure used in the requested snippet
@@ -44,7 +49,7 @@ const RecordingCard = ({
         >
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">
-                    {recording.name || (recording.isDraft ? `Draft ${recording.draftNumber}` : "Analysis")}
+                    {recording.name || (showAsDraft ? `Draft ${resolvedDraftNumber}` : "Analysis")}
                 </h2>
                 {date && <span className="text-xs text-gray-500">{date}</span>}
             </div>

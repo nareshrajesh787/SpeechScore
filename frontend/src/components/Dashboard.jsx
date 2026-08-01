@@ -26,6 +26,7 @@ export default function Dashboard() {
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectDescription, setNewProjectDescription] = useState('');
     const [newProjectRubricPreset, setNewProjectRubricPreset] = useState('General Speaking');
+    const [formError, setFormError] = useState(null);
 
     useEffect(() => {
         if (!user) return;
@@ -73,7 +74,7 @@ export default function Dashboard() {
 
     const handleCreateProject = async () => {
         if (!newProjectName.trim()) {
-            alert('Please enter a project name');
+            setFormError('Please enter a project name');
             return;
         }
 
@@ -89,11 +90,17 @@ export default function Dashboard() {
             setNewProjectName('');
             setNewProjectDescription('');
             setNewProjectRubricPreset('General Speaking');
+            setFormError(null);
             navigate(`/project/${projectRef.id}`);
         } catch (error) {
             console.error('Error creating project:', error);
-            alert('Failed to create project');
+            setFormError('Failed to create project');
         }
+    };
+
+    const closeNewProjectModal = () => {
+        setShowNewProjectModal(false);
+        setFormError(null);
     };
 
     const containerVariants = {
@@ -151,8 +158,8 @@ export default function Dashboard() {
                         <Button
                             as={Link}
                             to="/analyze"
-                            variant="primary"
-                            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 focus:ring-purple-500"
+                            variant="secondary"
+                            className="px-6 py-3"
                         >
                             <FontAwesomeIcon icon="microphone" />
                             Quick Analyze
@@ -207,7 +214,8 @@ export default function Dashboard() {
                 {/* Legacy Feedback Section */}
                 {feedback.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Analyses</h2>
+                        <h2 className="text-xl font-bold text-gray-800">Quick Analyses</h2>
+                        <p className="text-sm text-gray-500 mt-1 mb-4">One-off analyses not attached to a project.</p>
                         <motion.div 
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             variants={containerVariants}
@@ -250,8 +258,8 @@ export default function Dashboard() {
                             <Button
                                 as={Link}
                                 to="/analyze"
-                                variant="primary"
-                                className="px-6 py-3 rounded-full shadow-md bg-purple-600 hover:bg-purple-700 focus:ring-purple-500"
+                                variant="secondary"
+                                className="px-6 py-3 rounded-full shadow-md"
                             >
                                 <FontAwesomeIcon icon="microphone" />
                                 Quick Analyze
@@ -263,11 +271,14 @@ export default function Dashboard() {
                 {/* New Project Modal */}
                 <Modal
                     isOpen={showNewProjectModal}
-                    onClose={() => setShowNewProjectModal(false)}
+                    onClose={closeNewProjectModal}
                     className="relative w-full max-w-md p-6"
                     labelledBy="new-project-heading"
                 >
                     <h2 id="new-project-heading" className="text-2xl font-bold text-gray-900 mb-4">Create New Project</h2>
+                    {formError && (
+                        <p className="text-red-600 text-sm mb-4">{formError}</p>
+                    )}
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="new-project-name" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -277,7 +288,10 @@ export default function Dashboard() {
                                 id="new-project-name"
                                 type="text"
                                 value={newProjectName}
-                                onChange={(e) => setNewProjectName(e.target.value)}
+                                onChange={(e) => {
+                                    setNewProjectName(e.target.value);
+                                    if (formError) setFormError(null);
+                                }}
                                 placeholder="e.g., FBLA State Finals"
                                 className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 autoFocus
@@ -326,7 +340,7 @@ export default function Dashboard() {
                             </Button>
                             <Button
                                 variant="secondary"
-                                onClick={() => setShowNewProjectModal(false)}
+                                onClick={closeNewProjectModal}
                                 className="px-6 py-3"
                             >
                                 Cancel
@@ -338,7 +352,7 @@ export default function Dashboard() {
                     <button
                         className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
                         aria-label="Close"
-                        onClick={() => setShowNewProjectModal(false)}
+                        onClick={closeNewProjectModal}
                     >
                         <FontAwesomeIcon icon="times" />
                     </button>
