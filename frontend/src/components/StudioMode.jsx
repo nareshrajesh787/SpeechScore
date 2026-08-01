@@ -196,7 +196,7 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
                         onClick={handleUseRecording}
                         className="flex-1 px-6 py-3"
                     >
-                        <FontAwesomeIcon icon="check" className="mr-2" />
+                        <FontAwesomeIcon icon="check" />
                         Use This Recording
                     </Button>
                     <Button
@@ -204,7 +204,7 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
                         onClick={handleRetry}
                         className="px-6 py-3"
                     >
-                        <FontAwesomeIcon icon="redo" className="mr-2" />
+                        <FontAwesomeIcon icon="redo" />
                         Retry
                     </Button>
                     {onCancel && (
@@ -247,7 +247,7 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
                         onClick={startRecording}
                         className="mx-auto w-fit px-8 py-4 text-lg shadow-md"
                     >
-                        <FontAwesomeIcon icon="circle" className="mr-2" />
+                        <FontAwesomeIcon icon="circle" />
                         Start Recording
                     </Button>
                 </div>

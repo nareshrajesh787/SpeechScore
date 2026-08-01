@@ -37,7 +37,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="bg-zinc-50 min-h-screen font-sans text-gray-900 selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="bg-zinc-50 min-h-screen font-sans text-gray-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden">
       <Navbar />
 
       {/* Hero Section */}

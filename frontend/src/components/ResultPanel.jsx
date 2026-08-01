@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import InteractiveTranscript from "./InteractiveTranscript";
 import CoachChat from "./CoachChat";
 import Button from "./ui/Button";
+import Card from "./ui/Card";
 import Spinner from "./ui/Spinner";
 import Tabs from "./ui/Tabs";
 import { getRubricScoreEntries } from "../utils/normalizeRecording";
@@ -35,11 +36,14 @@ export default function ResultPanel({ result, onTryAgain }) {
     };
 
     return (
-        <motion.div 
+        <Card
+            as={motion.div}
+            variant="surface"
+            padding="p-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 space-y-6 font-medium border border-indigo-100"
+            className="space-y-6 font-medium"
         >
             {/*TOP BAR*/}
             <div className="flex justify-between items-center text-sm text-gray-500">
@@ -291,6 +295,6 @@ export default function ResultPanel({ result, onTryAgain }) {
                     </div>
                 </div>
             </div>
-        </motion.div>
+        </Card>
     );
 }

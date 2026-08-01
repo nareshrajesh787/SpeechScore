@@ -11,6 +11,7 @@ import ResultPanel from './ResultPanel';
 import Navbar from './Navbar';
 import StudioMode from './StudioMode';
 import AnalyzerForm from './AnalyzerForm';
+import Card from './ui/Card';
 import SignInGate from './ui/SignInGate';
 import Spinner from './ui/Spinner';
 import Tabs from './ui/Tabs';
@@ -277,7 +278,7 @@ export default function SpeechAnalyzerPage() {
                         : "p-6 grid grid-cols-1"
                 }
             >
-                <div className="max-w-3xl mx-auto max-h-fit bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 mt-12 shadow-lg border border-indigo-100">
+                <Card variant="surface" padding="p-8" className="max-w-3xl mx-auto max-h-fit mt-12 shadow-lg">
                     <h1 className="font-bold text-4xl text-center text-gray-800">
                         <FontAwesomeIcon
                             className="text-indigo-600"
@@ -353,7 +354,7 @@ export default function SpeechAnalyzerPage() {
                             handleSubmit={handleSubmit}
                         />
                     )}
-                </div>
+                </Card>
 
                 {result && (
                     <ResultPanel

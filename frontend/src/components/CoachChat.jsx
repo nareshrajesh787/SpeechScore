@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { API_URL } from "../config";
 import { auth } from "../firebase";
+import Button from "./ui/Button";
 
 export default function CoachChat({ transcript, rubricFeedback }) {
     const [messages, setMessages] = useState([]);
@@ -152,24 +153,15 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                         rows={1}
                         disabled={isLoading}
                     />
-                    {/* Deliberately NOT migrated to <Button>. This is an icon-only,
-                        absolutely-positioned, borderless affordance overlaid on the
-                        textarea: it needs `p-2` (not the base `px-4 py-2`), `rounded-lg`
-                        (not `rounded-xl`), and a disabled treatment (`text-gray-300`, no
-                        hover) that no Button variant expresses. Routing it through Button
-                        would mean overriding most of Button's base styles, which is worse
-                        than leaving it raw. Revisit once Button grows an `icon` size /
-                        variant. */}
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${!input.trim() || isLoading
-                            ? "text-gray-300"
-                            : "text-indigo-600 hover:bg-indigo-50"
-                            }`}
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
                     >
                         <FontAwesomeIcon icon="paper-plane" />
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

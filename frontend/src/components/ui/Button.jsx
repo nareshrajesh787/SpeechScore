@@ -4,13 +4,21 @@ import React from 'react';
 // react-router <Link>s (Navbar's Analyze, Dashboard's Quick Analyze,
 // ProjectView's New Recording), and they should share button styling without
 // being rendered as <button>.
-const Button = ({ children, variant = 'primary', className = '', onClick, as: Component = 'button', ...props }) => {
-    const baseStyles = "px-4 py-2 rounded-xl font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-1";
+const Button = ({ children, variant = 'primary', size = 'md', className = '', onClick, as: Component = 'button', ...props }) => {
+    const baseStyles = "font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none";
+
+    // `icon` is for icon-only, borderless affordances (e.g. a chat send
+    // button overlaid on a textarea) that need tighter padding and a
+    // smaller radius than the standard pill/rounded-rect sizing.
+    const sizes = {
+        md: "px-4 py-2 rounded-xl",
+        icon: "p-2 rounded-lg",
+    };
 
     const variants = {
         primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm focus:ring-indigo-500",
         secondary: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-200",
-        ghost: "bg-transparent text-indigo-600 hover:bg-indigo-50 focus:ring-indigo-300",
+        ghost: "bg-transparent text-indigo-600 hover:bg-indigo-50 focus:ring-indigo-300 disabled:text-gray-300 disabled:hover:bg-transparent",
         // Muted tertiary action (modal "Cancel" and similar). Distinct from
         // `ghost` because a className color override cannot reliably beat a
         // variant's own text color — Tailwind utilities share specificity, so
@@ -28,10 +36,11 @@ const Button = ({ children, variant = 'primary', className = '', onClick, as: Co
     };
 
     const variantClasses = variants[variant] || variants.primary;
+    const sizeClasses = sizes[size] || sizes.md;
 
     return (
         <Component
-            className={`${baseStyles} ${variantClasses} ${className}`}
+            className={`${baseStyles} ${sizeClasses} ${variantClasses} ${className}`}
             onClick={onClick}
             {...props}
         >
