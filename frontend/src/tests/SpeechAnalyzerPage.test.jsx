@@ -49,13 +49,32 @@ vi.mock('firebase/firestore', () => ({
   doc: vi.fn(() => ({})),
   setDoc: vi.fn().mockResolvedValue(undefined),
   getDoc: vi.fn().mockResolvedValue({ exists: () => false }),
+  getDocs: vi.fn().mockResolvedValue({ empty: true, docs: [] }),
+  query: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
   collection: vi.fn(),
   addDoc: vi.fn(),
   Timestamp: { now: () => ({ toDate: () => new Date() }) },
   onSnapshot: vi.fn(() => unsubscribeSpy),
 }));
 
+// Stubbed so these tests exercise SpeechAnalyzerPage's own data-fetching, not
+// ResultPanel's rendering (covered separately in ResultPanel.test.jsx). Exposes
+// the previousRecording prop directly so the fetch-and-pass-through behavior
+// is actually observable.
+vi.mock('../components/ResultPanel', () => ({
+  default: ({ previousRecording }) => (
+    <div data-testid="result-panel">
+      <span data-testid="result-panel-previous">
+        {previousRecording ? `${previousRecording.rubric_total}/${previousRecording.rubric_max}` : 'none'}
+      </span>
+    </div>
+  ),
+}));
+
 import SpeechAnalyzerPage from '../components/SpeechAnalyzerPage';
+import { getDocs, onSnapshot } from 'firebase/firestore';
 
 function renderPage() {
   return render(
@@ -126,5 +145,74 @@ describe('SpeechAnalyzerPage analysis progress + timeout', () => {
     expect(screen.getByText(/taking longer than expected/i)).toBeInTheDocument();
     expect(screen.queryByText(/Analyzing your speech/i)).not.toBeInTheDocument();
     expect(unsubscribeSpy).toHaveBeenCalled();
+  });
+});
+
+// Regression coverage for a new feature: on submit within a project,
+// SpeechAnalyzerPage looks up the most recent existing draft BEFORE writing
+// the new recording doc (so "most recent" genuinely means the previous one,
+// not the one being created), and passes it through to ResultPanel so the
+// score hero can show a delta immediately after analysis completes.
+describe('SpeechAnalyzerPage previous-draft fetch', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    getDocs.mockReset();
+    onSnapshot.mockReset();
+  });
+
+  function renderWithProject() {
+    return render(
+      <MemoryRouter initialEntries={['/analyze?projectId=proj-1']}>
+        <SpeechAnalyzerPage />
+      </MemoryRouter>
+    );
+  }
+
+  it('fetches the previous draft and passes it to ResultPanel once analysis completes', async () => {
+    getDocs.mockResolvedValueOnce({
+      empty: false,
+      docs: [{ data: () => ({ rubric_total: 26, rubric_max: 40 }) }],
+    });
+    onSnapshot.mockImplementationOnce((docRef, onNext) => {
+      onNext({ exists: () => true, data: () => ({ status: 'completed', rubric_total: 29, rubric_max: 40 }) });
+      return unsubscribeSpy;
+    });
+
+    renderWithProject();
+    await submitWithFile();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('result-panel-previous')).toHaveTextContent('26/40');
+    });
+  });
+
+  it('passes no previous draft for a Quick Analysis with no project (and never queries for one)', async () => {
+    onSnapshot.mockImplementationOnce((docRef, onNext) => {
+      onNext({ exists: () => true, data: () => ({ status: 'completed', rubric_total: 29, rubric_max: 40 }) });
+      return unsubscribeSpy;
+    });
+
+    renderPage(); // no ?projectId in the URL
+    await submitWithFile();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('result-panel-previous')).toHaveTextContent('none');
+    });
+    expect(getDocs).not.toHaveBeenCalled();
+  });
+
+  it('passes no previous draft for a brand-new project with no prior recordings', async () => {
+    getDocs.mockResolvedValueOnce({ empty: true, docs: [] });
+    onSnapshot.mockImplementationOnce((docRef, onNext) => {
+      onNext({ exists: () => true, data: () => ({ status: 'completed', rubric_total: 18, rubric_max: 40 }) });
+      return unsubscribeSpy;
+    });
+
+    renderWithProject();
+    await submitWithFile();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('result-panel-previous')).toHaveTextContent('none');
+    });
   });
 });

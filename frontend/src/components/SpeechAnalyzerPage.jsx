@@ -4,7 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { db } from '../firebase';
-import { addDoc, collection, Timestamp, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { addDoc, collection, Timestamp, doc, getDoc, getDocs, query, orderBy, limit, setDoc, onSnapshot } from 'firebase/firestore';
 import { uploadAudioToStorage } from '../utils/audioStorage';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
 import ResultPanel from './ResultPanel';
@@ -25,6 +25,7 @@ export default function SpeechAnalyzerPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
     const [result, setResult] = useState(null);
+    const [previousRecording, setPreviousRecording] = useState(null);
     const [audioBlob, setAudioBlob] = useState(null); // Store audio Blob for upload
     const [user, loadingAuth] = useAuthState(auth);
     const [mode, setMode] = useState('upload'); // 'upload' or 'studio'
@@ -168,6 +169,29 @@ export default function SpeechAnalyzerPage() {
                 }
                 setIsUploadingAudio(false); // Done uploading
 
+                // Look up the most recent existing draft in this project, if
+                // any, BEFORE writing the new recording doc below -- at this
+                // point the new doc doesn't exist yet, so "most recent" here
+                // is genuinely the previous draft, not the one we're about to
+                // create. Used to show a delta vs. this draft once results
+                // arrive. Quick Analyses (no projectId) have no prior draft
+                // to compare against by design.
+                let fetchedPreviousRecording = null;
+                if (projectId) {
+                    try {
+                        const projectRecordingsRef = collection(db, `users/${auth.currentUser.uid}/projects/${projectId}/recordings`);
+                        const prevSnap = await getDocs(
+                            query(projectRecordingsRef, orderBy('createdAt', 'desc'), limit(1))
+                        );
+                        if (!prevSnap.empty) {
+                            fetchedPreviousRecording = prevSnap.docs[0].data();
+                        }
+                    } catch (prevError) {
+                        console.error('Error fetching previous draft:', prevError);
+                    }
+                }
+                setPreviousRecording(fetchedPreviousRecording);
+
                 // Create dummy document with status analyzing
                 let docRef;
                 const initialData = {
@@ -278,9 +302,11 @@ export default function SpeechAnalyzerPage() {
                 {result ? (
                     <ResultPanel
                         result={result}
+                        previousRecording={previousRecording}
                         onTryAgain={() => {
                             setResult(null);
                             setAudioBlob(null);
+                            setPreviousRecording(null);
                         }}
                     />
                 ) : (

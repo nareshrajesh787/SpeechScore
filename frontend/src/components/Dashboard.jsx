@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useNavigate, Link } from 'react-router-dom';
-import { collection, query, getDocs, where, addDoc, Timestamp, getCountFromServer } from 'firebase/firestore';
+import { collection, query, getDocs, where, addDoc, Timestamp, getCountFromServer, orderBy, limit } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
 import { formatRelativeDate } from '../utils/formatDate';
@@ -13,9 +13,21 @@ import Modal from './ui/Modal';
 import SignInGate from './ui/SignInGate';
 import Spinner from './ui/Spinner';
 import EmptyState from './ui/EmptyState';
+import Sparkline from './ui/Sparkline';
+import { getMetricTone } from './ui/Metric';
 import RecordingCard from './RecordingCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { motion } from 'framer-motion';
+
+// Static tone -> class maps. Tailwind's JIT scanner needs literal class
+// strings in source; `bg-${tone}-50` interpolation would silently produce no
+// CSS at build time.
+const SCORE_PILL_CLASSES = {
+    good: 'bg-good-50 text-good-700 border-good-200',
+    caution: 'bg-caution-50 text-caution-700 border-caution-200',
+    'needs-work': 'bg-needs-work-50 text-needs-work-700 border-needs-work-200',
+    neutral: 'bg-paper-200 text-ink-600 border-paper-300',
+};
 
 export default function Dashboard() {
     const [user, loading, error] = useAuthState(auth);
@@ -55,6 +67,20 @@ export default function Dashboard() {
                         const recordingsRef = collection(db, `users/${user.uid}/projects/${doc.id}/recordings`);
                         const countSnapshot = await getCountFromServer(recordingsRef);
                         projectData.recordingCount = countSnapshot.data().count;
+
+                        // A handful of recent recordings, for the card's
+                        // sparkline + latest-score pill. Newest-first from
+                        // Firestore, reversed to chronological (oldest first)
+                        // to match the sparkline's left-to-right reading.
+                        const recentSnap = await getDocs(
+                            query(recordingsRef, orderBy('createdAt', 'desc'), limit(8))
+                        );
+                        const recent = recentSnap.docs.map((d) => d.data()).reverse();
+                        projectData.scoreTrend = recent
+                            .filter((r) => Number.isFinite(r.rubric_total) && Number.isFinite(r.rubric_max) && r.rubric_max > 0)
+                            .map((r) => (r.rubric_total / r.rubric_max) * 100);
+                        projectData.latestRecording = recent.length ? recent[recent.length - 1] : null;
+
                         return projectData;
                     })
                 );
@@ -191,6 +217,27 @@ export default function Dashboard() {
                                         </div>
                                         {project.description && (
                                             <p className="text-sm text-ink-600 mb-4 line-clamp-2">{project.description}</p>
+                                        )}
+                                        {project.scoreTrend && project.scoreTrend.length >= 2 && (
+                                            <div className="mb-4">
+                                                <Sparkline
+                                                    values={project.scoreTrend}
+                                                    tone={project.scoreTrend[project.scoreTrend.length - 1] > project.scoreTrend[0] ? 'accent' : 'brand'}
+                                                    height={28}
+                                                />
+                                            </div>
+                                        )}
+                                        {project.latestRecording && Number.isFinite(project.latestRecording.rubric_total) && Number.isFinite(project.latestRecording.rubric_max) && (
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs text-ink-500">Latest score</span>
+                                                <span
+                                                    className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${SCORE_PILL_CLASSES[
+                                                        getMetricTone('rubric', project.latestRecording.rubric_total, { max: project.latestRecording.rubric_max })
+                                                    ]}`}
+                                                >
+                                                    {project.latestRecording.rubric_total}/{project.latestRecording.rubric_max}
+                                                </span>
+                                            </div>
                                         )}
                                         <div className="flex items-center justify-between text-sm text-paper-500 mt-auto">
                                             <span>

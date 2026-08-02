@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
@@ -258,5 +258,70 @@ describe('ProjectView', () => {
     });
     // Cancelling must not have deleted anything.
     expect(screen.getByText('Draft a')).toBeInTheDocument();
+  });
+});
+
+describe('ProjectView summary strip', () => {
+  beforeEach(() => {
+    authState.current = [{ uid: 'test-uid', displayName: 'Test User' }, false, undefined];
+    firestoreState.project = { name: 'Wedding Toast', description: 'Practice run' };
+    firestoreState.projectExists = true;
+  });
+
+  it('does not render with fewer than 2 recordings', async () => {
+    firestoreState.recordings = [makeRecording('a', { rubric_total: 29, rubric_max: 40 })];
+
+    renderProjectView();
+
+    await waitFor(() => {
+      expect(screen.getByText('Draft a')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Best score')).not.toBeInTheDocument();
+    expect(screen.queryByText('Since Draft 1')).not.toBeInTheDocument();
+  });
+
+  it('shows draft count, best score, and improvement since the first draft', async () => {
+    // Fixture order is newest-first, matching the real Firestore query
+    // (orderBy createdAt desc): 'a' is the newest draft, 'c' the oldest.
+    firestoreState.recordings = [
+      makeRecording('a', { rubric_total: 29, rubric_max: 40 }), // newest
+      makeRecording('b', { rubric_total: 33, rubric_max: 40 }), // best score
+      makeRecording('c', { rubric_total: 18, rubric_max: 40 }), // oldest
+    ];
+
+    renderProjectView();
+
+    const strip = await screen.findByTestId('project-summary-strip');
+    await waitFor(() => {
+      expect(within(strip).getByText('Best score')).toBeInTheDocument();
+    });
+
+    // Scoped to the strip: RecordingCard's own Rubric tiles render the same
+    // "33/40"-style text for each individual draft, so an unscoped query
+    // would false-match those too.
+    expect(within(strip).getByText('3')).toBeInTheDocument(); // draft count
+    expect(within(strip).getByText('33/40')).toBeInTheDocument(); // best of the three, not the newest
+    // Newest (29) vs oldest (18) = +11.
+    expect(within(strip).getByText('+11')).toBeInTheDocument();
+  });
+
+  it('shows an em-dash for the improvement stat when rubric data is missing', async () => {
+    firestoreState.recordings = [
+      makeRecording('a', { rubric_total: undefined, rubric_max: undefined }),
+      makeRecording('b', { rubric_total: undefined, rubric_max: undefined }),
+    ];
+
+    renderProjectView();
+
+    const strip = await screen.findByTestId('project-summary-strip');
+    await waitFor(() => {
+      expect(within(strip).getByText('Since Draft 1')).toBeInTheDocument();
+    });
+    // Two separate em-dashes within the strip itself: "Best score" (no scored
+    // recordings) and "Since Draft 1" (no delta to compute) both fall back to
+    // it. (RecordingCard's own Metric tiles also render "—" for the same
+    // missing data, which is why this is scoped to the strip rather than the
+    // whole document.)
+    expect(within(strip).getAllByText('—')).toHaveLength(2);
   });
 });

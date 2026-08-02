@@ -18,6 +18,7 @@ import ResultPanel from './ResultPanel';
 import TrendCharts from './charts/TrendCharts';
 import RecordingCard from './RecordingCard';
 import Button from './ui/Button';
+import DeltaBadge from './ui/DeltaBadge';
 import EmptyState from './ui/EmptyState';
 import Modal from './ui/Modal';
 import SignInGate from './ui/SignInGate';
@@ -195,6 +196,45 @@ export default function ProjectView() {
                     <TrendCharts recordings={recordings} />
                 ) : (
                     <>
+                        {/* Project Summary Strip -- only meaningful with at
+                            least 2 drafts to compare. Recordings are
+                            newest-first, so oldest = last element, newest =
+                            first. */}
+                        {recordings.length >= 2 && (() => {
+                            const scored = recordings.filter(
+                                (r) => Number.isFinite(r.rubric_total) && Number.isFinite(r.rubric_max) && r.rubric_max > 0
+                            );
+                            const best = scored.length
+                                ? scored.reduce((a, b) => (b.rubric_total / b.rubric_max > a.rubric_total / a.rubric_max ? b : a))
+                                : null;
+                            const oldest = recordings[recordings.length - 1];
+                            const newest = recordings[0];
+                            const hasImprovementDelta = Number.isFinite(oldest?.rubric_total) && Number.isFinite(newest?.rubric_total);
+
+                            return (
+                                <div data-testid="project-summary-strip" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-white border border-paper-300 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1">Drafts</p>
+                                        <p className="font-display text-2xl font-semibold text-ink-900 tabular-nums">{recordings.length}</p>
+                                    </div>
+                                    <div className="bg-white border border-paper-300 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1">Best score</p>
+                                        <p className="font-display text-2xl font-semibold text-ink-900 tabular-nums">
+                                            {best ? `${best.rubric_total}/${best.rubric_max}` : '—'}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white border border-paper-300 rounded-xl p-4 col-span-2 sm:col-span-1">
+                                        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1">Since Draft 1</p>
+                                        {hasImprovementDelta ? (
+                                            <DeltaBadge current={newest.rubric_total} previous={oldest.rubric_total} className="text-sm" />
+                                        ) : (
+                                            <p className="font-display text-2xl font-semibold text-ink-400">—</p>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         {/* Recordings List */}
                         {recordings.length === 0 ? (
                             <EmptyState
@@ -216,13 +256,15 @@ export default function ProjectView() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Recordings are fetched newest-first (orderBy createdAt desc),
                                     so draft numbering counts up from the oldest: draft 1 is the
-                                    first attempt, draft N is the most recent. */}
+                                    first attempt, draft N is the most recent. The chronologically
+                                    previous draft for index i is index i+1 in this same order. */}
                                 {recordings.map((recording, index) => (
                                     <RecordingCard
                                         key={recording.id}
                                         recording={recording}
                                         isDraft={!recording.name}
                                         draftNumber={recordings.length - index}
+                                        previousRecording={recordings[index + 1] || null}
                                         onClick={() => setSelectedRecording(recording)}
                                         onDelete={handleDeleteRecording}
                                         showDelete={true}
@@ -246,7 +288,14 @@ export default function ProjectView() {
                                 <FontAwesomeIcon icon="times" />
                             </button>
                             <div className="overflow-y-auto max-h-[90vh]">
-                                <ResultPanel result={selectedRecording} />
+                                <ResultPanel
+                                    result={selectedRecording}
+                                    previousRecording={
+                                        selectedRecording
+                                            ? recordings[recordings.findIndex((r) => r.id === selectedRecording.id) + 1] || null
+                                            : null
+                                    }
+                                />
                             </div>
                         </Modal>
 

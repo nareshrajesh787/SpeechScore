@@ -87,3 +87,50 @@ describe('RecordingCard delete button', () => {
     expect(screen.queryByTitle('Delete recording')).not.toBeInTheDocument();
   });
 });
+
+describe('RecordingCard delta chips', () => {
+  const current = { rubric_total: 29, rubric_max: 40, clarity_score: 7.4, filler_count: { um: 11 } };
+  const previous = { rubric_total: 26, rubric_max: 40, clarity_score: 7.0, filler_count: { um: 20 } };
+
+  it('renders no delta chips without a previousRecording', () => {
+    // Query by DeltaBadge's own title format (ends with the `label` prop
+    // verbatim, e.g. "...clarity") rather than by visible text: "Clarity"/
+    // "Fillers" are ALSO the always-rendered Metric tile labels, so a plain
+    // text query would false-match those regardless of whether any delta
+    // chip exists.
+    const { container } = render(<RecordingCard recording={current} />);
+    expect(container.querySelector('[title$="score"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[title$="fillers"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[title$="clarity"]')).not.toBeInTheDocument();
+  });
+
+  it('renders score, fillers, and clarity deltas -- but never a WPM delta -- vs the previous draft', () => {
+    render(<RecordingCard
+      recording={{ ...current, wpm: 168 }}
+      previousRecording={{ ...previous, wpm: 158 }}
+    />);
+
+    // +3 score (29 - 26), gold/improved.
+    expect(screen.getByText('+3')).toBeInTheDocument();
+    // -9 fillers (11 - 20), fewer is better, still gold.
+    expect(screen.getByText('-9')).toBeInTheDocument();
+    // +0.4 clarity (7.4 - 7.0).
+    expect(screen.getByText('+0.4')).toBeInTheDocument();
+
+    // WPM going 158 -> 168 is a +10 raw delta, but WPM never gets a chip:
+    // "better" WPM means closer to the ideal band, not higher, so a signed
+    // delta would misreport direction of improvement above the band.
+    expect(screen.queryByText('+10')).not.toBeInTheDocument();
+  });
+
+  it('omits an individual delta chip when that specific metric is missing on either draft', () => {
+    const { container } = render(<RecordingCard
+      recording={{ rubric_total: 29, rubric_max: 40 }} // no clarity_score, no filler_count
+      previousRecording={{ rubric_total: 26, rubric_max: 40 }}
+    />);
+
+    expect(screen.getByText('+3')).toBeInTheDocument(); // score delta still renders
+    expect(container.querySelector('[title$="clarity"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[title$="fillers"]')).not.toBeInTheDocument();
+  });
+});

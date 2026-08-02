@@ -10,9 +10,39 @@ import Button from "./ui/Button";
 import Card from "./ui/Card";
 import Spinner from "./ui/Spinner";
 import Tabs from "./ui/Tabs";
+import DeltaBadge from "./ui/DeltaBadge";
+import { getMetricTone } from "./ui/Metric";
 import { getRubricScoreEntries } from "../utils/normalizeRecording";
 
-export default function ResultPanel({ result, onTryAgain }) {
+// Static tone -> class maps. Tailwind's JIT scanner needs literal class
+// strings in source; a template like `text-${tone}-700` would silently
+// produce no CSS at build time.
+const TONE_TEXT = {
+    good: 'text-good-700',
+    caution: 'text-caution-700',
+    'needs-work': 'text-needs-work-700',
+    neutral: 'text-ink-800',
+};
+const TONE_BAR = {
+    good: 'bg-good-500',
+    caution: 'bg-caution-500',
+    'needs-work': 'bg-needs-work-500',
+    neutral: 'bg-paper-400',
+};
+const TONE_HEADLINE = {
+    good: 'text-good-600',
+    caution: 'text-caution-600',
+    'needs-work': 'text-needs-work-600',
+    neutral: 'text-ink-500',
+};
+const GRADE_LABEL = {
+    good: 'Strong performance',
+    caution: 'Solid, with room to grow',
+    'needs-work': 'Needs work',
+    neutral: 'Not yet scored',
+};
+
+export default function ResultPanel({ result, previousRecording, onTryAgain }) {
     const [activeTab, setActiveTab] = useState('transcript'); // 'transcript', 'coach'
 
     if (!result) {
@@ -34,6 +64,28 @@ export default function ResultPanel({ result, onTryAgain }) {
             (result.timestamp?.toDate ? result.timestamp.toDate() : null);
         return date ? date.toLocaleString() : "Just now";
     };
+
+    const hasRubricTotal = Number.isFinite(result.rubric_total) && Number.isFinite(result.rubric_max) && result.rubric_max > 0;
+    const scoreTone = hasRubricTotal ? getMetricTone('rubric', result.rubric_total, { max: result.rubric_max }) : 'neutral';
+
+    const totalFillers = result.filler_count
+        ? Object.values(result.filler_count).reduce((a, b) => a + b, 0)
+        : 0;
+    const wpmTone = getMetricTone('wpm', result.wpm);
+    const fillersTone = getMetricTone('fillers', totalFillers, { durationSeconds: result.audio_duration });
+    const clarityTone = getMetricTone('clarity', result.clarity_score);
+
+    // WPM deliberately gets no DeltaBadge: "better" for pace means "closer to
+    // the 130-150 ideal band," not "higher" or "lower." A signed delta chip
+    // would misreport direction-of-improvement for anyone above the band
+    // (e.g. 165 -> 145 is an improvement despite being a negative delta shown
+    // as "worse" by a naive higher-is-better read). Fillers/clarity/rubric are
+    // all genuinely monotonic (fewer fillers, higher clarity, higher score is
+    // always better), so those get real delta badges.
+    const hasPrevious = Boolean(previousRecording);
+    const previousFillers = hasPrevious && previousRecording.filler_count
+        ? Object.values(previousRecording.filler_count).reduce((a, b) => a + b, 0)
+        : null;
 
     return (
         <Card
@@ -62,6 +114,36 @@ export default function ResultPanel({ result, onTryAgain }) {
                             Try Another
                         </Button>
                     )}
+                </div>
+            </div>
+
+            {/* SCORE HERO -- the number the user actually came here for, given
+                the visual weight to match. Previously this was a small text-lg
+                figure buried at the bottom of a bordered box below the AI
+                feedback section. */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-paper-300">
+                <div>
+                    <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-1">
+                        Overall score
+                    </p>
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                        <p className="font-display text-6xl sm:text-7xl font-semibold text-ink-900 tabular-nums leading-none">
+                            {hasRubricTotal ? result.rubric_total : '—'}
+                            <span className="text-2xl sm:text-3xl text-ink-400">
+                                /{hasRubricTotal ? result.rubric_max : '—'}
+                            </span>
+                        </p>
+                        {hasPrevious && Number.isFinite(previousRecording.rubric_total) && hasRubricTotal && (
+                            <DeltaBadge
+                                current={result.rubric_total}
+                                previous={previousRecording.rubric_total}
+                                label="vs last draft"
+                            />
+                        )}
+                    </div>
+                    <p className={`text-sm font-semibold mt-1 ${TONE_HEADLINE[scoreTone]}`}>
+                        {GRADE_LABEL[scoreTone]}
+                    </p>
                 </div>
             </div>
 
@@ -105,14 +187,14 @@ export default function ResultPanel({ result, onTryAgain }) {
                         WPM
                     </p>
                     <div className="flex items-baseline justify-start gap-2">
-                        <p className="text-2xl font-bold text-ink-800">
+                        <p className={`text-2xl font-bold ${TONE_TEXT[wpmTone]}`}>
                             {result.wpm}
                         </p>
                         <p className="text-xs text-paper-500">Words/min</p>
                     </div>
                     <div className="w-full h-2 bg-brand-100 rounded-full mt-2 relative overflow-hidden">
                         <div
-                            className="h-2 bg-brand-600 rounded-full"
+                            className={`h-2 rounded-full ${TONE_BAR[wpmTone]}`}
                             style={{
                                 width: `${Math.min(
                                     (result.wpm / 200) * 100,
@@ -132,20 +214,20 @@ export default function ResultPanel({ result, onTryAgain }) {
                         />{" "}
                         Filler Words
                     </p>
-                    <div className="flex items-baseline justify-start gap-2">
-                        <p className="text-2xl font-bold text-ink-800">
-                            {Object.values(result.filler_count).reduce(
-                                (a, b) => a + b,
-                                0
-                            )}
+                    <div className="flex items-baseline justify-start gap-2 flex-wrap">
+                        <p className={`text-2xl font-bold ${TONE_TEXT[fillersTone]}`}>
+                            {totalFillers}
                         </p>
                         <p className="text-xs text-paper-500">total</p>
+                        {hasPrevious && previousFillers !== null && (
+                            <DeltaBadge current={totalFillers} previous={previousFillers} lowerIsBetter />
+                        )}
                     </div>
                     <div className="text-xs text-paper-500 mt-2 mb-2 flex justify-start gap-2 flex-wrap">
                         {Object.entries(result.filler_count).map(
                             ([w, c], i) => (
                                 <span key={i} className="font-bold">
-                                    <span className="text-needs-work-600 font-semibold bg-needs-work-100 rounded-md p-[0.1rem] my-1">
+                                    <span className="text-ink-700 font-semibold bg-highlighter rounded-md p-[0.1rem] my-1">
                                         {w}
                                     </span>{" "}
                                     — {c}x
@@ -165,7 +247,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                         Clarity
                     </p>
                     <div className="flex justify-start items-center flex-wrap gap-2 mb-3">
-                        <p className="text-2xl font-bold text-ink-800">
+                        <p className={`text-2xl font-bold ${TONE_TEXT[clarityTone]}`}>
                             {result.clarity_score}
                         </p>
                         <p className="text-xs text-paper-500 me-2">/10</p>
@@ -182,6 +264,9 @@ export default function ResultPanel({ result, onTryAgain }) {
                                 />
                             ))}
                         </div>
+                        {hasPrevious && Number.isFinite(previousRecording.clarity_score) && (
+                            <DeltaBadge current={result.clarity_score} previous={previousRecording.clarity_score} precision={1} />
+                        )}
                     </div>
 
                     <div className="flex justify-start gap-2">
@@ -265,20 +350,35 @@ export default function ResultPanel({ result, onTryAgain }) {
                                 Rubric Breakdown
                             </p>
 
-                            {/* RUBRIC SCORES */}
-                            <div className="grid gap-y-2 items-center text-base text-ink-700">
+                            {/* RUBRIC SCORES -- each row is a labelled progress
+                                bar, tone-colored per criterion, rather than
+                                plain text. */}
+                            <div className="space-y-3 text-base text-ink-700">
                                 {getRubricScoreEntries(result.rubric_scores).map(
-                                    ({ criterion, score, max }, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex justify-between items-center w-full"
-                                        >
-                                            <span>{criterion}</span>
-                                            <span className="font-semibold text-ink-800">
-                                                {score}/{max}
-                                            </span>
-                                        </div>
-                                    )
+                                    ({ criterion, score, max }, i) => {
+                                        const rowTone = Number.isFinite(max) && max > 0
+                                            ? getMetricTone('rubric', score, { max })
+                                            : 'neutral';
+                                        const pct = Number.isFinite(max) && max > 0
+                                            ? Math.min(100, Math.max(0, (score / max) * 100))
+                                            : 0;
+                                        return (
+                                            <div key={i}>
+                                                <div className="flex justify-between items-center w-full mb-1">
+                                                    <span>{criterion}</span>
+                                                    <span className="font-semibold text-ink-800">
+                                                        {score}/{max}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-paper-300 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-1.5 rounded-full ${TONE_BAR[rowTone]}`}
+                                                        style={{ width: `${pct}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    }
                                 )}
                             </div>
 

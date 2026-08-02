@@ -19,6 +19,8 @@ vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
   addDoc: vi.fn(),
   Timestamp: { now: () => ({ toDate: () => new Date() }) },
   getCountFromServer: vi.fn().mockResolvedValue({ data: () => ({ count: 0 }) }),
@@ -176,5 +178,75 @@ describe('Dashboard', () => {
     expect(alertSpy).not.toHaveBeenCalled();
 
     alertSpy.mockRestore();
+  });
+});
+
+describe('Dashboard project card sparkline + latest score', () => {
+  // getDocs is called in a fixed sequence for a single project: (1) legacy
+  // feedback, (2) the projects list, (3) that project's recent recordings
+  // (newest-first, matching the real orderBy('createdAt', 'desc') query --
+  // Dashboard reverses this to chronological order itself).
+  it('renders a sparkline and a tone-colored latest-score pill for a project with scored recordings', async () => {
+    getDocs
+      .mockResolvedValueOnce({ docs: [] }) // feedback
+      .mockResolvedValueOnce({
+        docs: [{ id: 'p1', data: () => ({ name: 'Q3 Review', createdAt: { toDate: () => new Date('2026-01-01') } }) }],
+      })
+      .mockResolvedValueOnce({
+        docs: [
+          { data: () => ({ rubric_total: 29, rubric_max: 40, createdAt: { toDate: () => new Date('2026-01-10') } }) },
+          { data: () => ({ rubric_total: 18, rubric_max: 40, createdAt: { toDate: () => new Date('2026-01-05') } }) },
+        ],
+      });
+
+    const { container } = render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Q3 Review')).toBeInTheDocument();
+    });
+
+    // Latest score pill shows the MOST RECENT recording's score (29/40, not
+    // 18/40, which is the older one despite appearing first in the
+    // desc-ordered fixture) -- proves the reverse-to-chronological step
+    // actually happened.
+    const pill = await screen.findByText('29/40');
+    expect(pill).toBeInTheDocument();
+    // 29/40 = 72.5%, the "caution" band (50-75%) per Metric's thresholds.
+    expect(pill.className).toContain('bg-caution-50');
+
+    // Sparkline renders as an inline svg with a rising trend (18 -> 29),
+    // which Dashboard colors gold (accent) rather than brand.
+    const sparklineLine = container.querySelector('svg path.stroke-accent-500');
+    expect(sparklineLine).toBeInTheDocument();
+  });
+
+  it('shows neither a sparkline nor a latest-score pill for a project with no scored recordings', async () => {
+    getDocs
+      .mockResolvedValueOnce({ docs: [] }) // feedback
+      .mockResolvedValueOnce({
+        docs: [{ id: 'p1', data: () => ({ name: 'Brand New Project', createdAt: { toDate: () => new Date('2026-01-01') } }) }],
+      })
+      .mockResolvedValueOnce({
+        // A recording that exists but hasn't been scored yet (e.g. still
+        // analyzing) -- no rubric_total/rubric_max.
+        docs: [{ data: () => ({ createdAt: { toDate: () => new Date('2026-01-05') } }) }],
+      });
+
+    const { container } = render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Brand New Project')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Latest score')).not.toBeInTheDocument();
+    expect(container.querySelector('svg')).not.toBeInTheDocument();
   });
 });
