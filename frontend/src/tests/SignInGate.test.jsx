@@ -34,8 +34,31 @@ describe('SignInGate', () => {
     expect(screen.getByText('Icon')).toBeInTheDocument();
     expect(screen.getByText('Sign in Required')).toBeInTheDocument();
     expect(screen.getByText('Sign in to view your projects.')).toBeInTheDocument();
-    // AuthButton renders a "Login" button when there is no authenticated user.
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
+    // AuthButton renders a "Sign in" button when there is no authenticated user.
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  // The gate is the app's ONLY sign-in surface. It must expose exactly one
+  // auth control -- the landing page used to hand-roll a near-copy of this
+  // modal, which put a second competing login button on screen next to the
+  // Navbar's.
+  it('exposes exactly one auth control', () => {
+    render(<SignInGate message="Sign in to view your projects." />);
+    expect(screen.getAllByRole('button', { name: /sign in/i })).toHaveLength(1);
+  });
+
+  it('is not dismissible by default', () => {
+    render(<SignInGate message="Sign in to view your projects." />);
+    expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
+  });
+
+  it('offers a cancel affordance when given an onClose handler', () => {
+    const onClose = vi.fn();
+    render(<SignInGate message="Sign in to continue." onClose={onClose} />);
+
+    const cancel = screen.getByRole('button', { name: /cancel/i });
+    cancel.click();
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('renders different text for different message props', () => {

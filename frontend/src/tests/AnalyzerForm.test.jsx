@@ -32,13 +32,53 @@ function makeDataTransfer(files) {
 }
 
 describe('AnalyzerForm', () => {
-  it('renders correctly with default props', () => {
+  it('renders the three numbered steps and the submit button', () => {
     render(<AnalyzerForm {...makeDefaultProps()} />);
 
-    expect(screen.getByText(/Audio File/i)).toBeInTheDocument();
-    expect(screen.getByText(/Speech Prompt/i)).toBeInTheDocument();
-    expect(screen.getByText(/Evaluation Rubric/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Analyze Speech/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Your recording/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /What are you practicing\?/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /How should we score it\?/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Analyze speech/i })).toBeInTheDocument();
+  });
+
+  // Regression guard: the step titles are <h2>s, not <label>s. Every field
+  // still needs a real label association -- the prompt textarea briefly lost
+  // its label when the form was restructured into steps.
+  it('keeps every field programmatically labelled', () => {
+    render(<AnalyzerForm {...makeDefaultProps()} />);
+
+    expect(screen.getByLabelText(/Speech prompt/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Evaluation rubric/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Scenario/i)).toBeInTheDocument();
+  });
+
+  it('disables submit until a recording is attached, and explains why', () => {
+    render(<AnalyzerForm {...makeDefaultProps()} />);
+
+    expect(screen.getByRole('button', { name: /Analyze speech/i })).toBeDisabled();
+    expect(screen.getByText(/Add a recording in step 1/i)).toBeInTheDocument();
+  });
+
+  describe('selected-file state', () => {
+    const file = new File(['x'.repeat(2048)], 'pitch.mp3', { type: 'audio/mpeg' });
+
+    it('replaces the dropzone with a confirmation card once a file is chosen', () => {
+      render(<AnalyzerForm {...makeDefaultProps({ audioFile: file })} />);
+
+      // The dropzone is gone; the file is confirmed by name and size.
+      expect(screen.queryByTestId('audio-dropzone')).not.toBeInTheDocument();
+      expect(screen.getByText('pitch.mp3')).toBeInTheDocument();
+      expect(screen.getByText(/Ready to analyze/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Analyze speech/i })).toBeEnabled();
+    });
+
+    it('clears the selection via the remove control', () => {
+      const setAudioFile = vi.fn();
+      render(<AnalyzerForm {...makeDefaultProps({ audioFile: file, setAudioFile })} />);
+
+      fireEvent.click(screen.getByTitle('Remove file'));
+      expect(setAudioFile).toHaveBeenCalledWith(null);
+    });
   });
 
   // Regression coverage: the dropzone's copy ("Click or drag to upload")

@@ -4,9 +4,11 @@ import AuthButton from './AuthButton.jsx';
 import Button from './ui/Button';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase.js';
+import { useSignInGateOpen } from '../utils/signInGateStore';
 
 export default function Navbar() {
     const [user] = useAuthState(auth);
+    const signInGateOpen = useSignInGateOpen();
 
     return (
         <header className="sticky top-0 z-50 bg-white/98 backdrop-blur-md shadow-lg">
@@ -33,7 +35,15 @@ export default function Navbar() {
                         >
                             Analyze
                         </Button>
-                        <AuthButton />
+                        {/* Suppressed while a sign-in gate is showing: that gate
+                            already offers the only auth control the user needs,
+                            and two competing "Sign in" buttons is the exact
+                            duplication this navbar used to create.
+                            `subtle` so it doesn't compete with Analyze, which is
+                            the navbar's actual primary action. */}
+                        {!signInGateOpen && (
+                            <AuthButton variant="subtle" className="px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base" />
+                        )}
                     </div>
                 </div>
             </nav>

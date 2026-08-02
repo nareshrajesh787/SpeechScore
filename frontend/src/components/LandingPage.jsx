@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase';
-import AuthButton from './AuthButton.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Navbar from './Navbar.jsx';
 import '../icons/fontawesome.js';
 import Button from './ui/Button.jsx';
 import Card from './ui/Card.jsx';
-import Modal from './ui/Modal.jsx';
+import SignInGate from './ui/SignInGate.jsx';
 
 export default function LandingPage() {
   const [user] = useAuthState(auth);
@@ -313,31 +312,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Login Modal */}
-      <Modal
-        isOpen={showLogin}
-        onClose={() => setShowLogin(false)}
-        className="p-8 flex flex-col gap-6 items-center max-w-sm w-full"
-        labelledBy="landing-signin-heading"
-      >
-        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-2">
-          <FontAwesomeIcon icon="user-circle" className="text-indigo-600 text-3xl" />
-        </div>
-        <div className="text-center">
-          <h2 id="landing-signin-heading" className="font-bold text-2xl text-gray-900 mb-2">Sign in Required</h2>
-          <p className="text-gray-500 text-sm">Sign in with Google to access your dashboard and save your progress.</p>
-        </div>
-        <div className="w-full space-y-3">
-          <AuthButton />
-          <Button
-            variant="subtle"
-            className="text-sm w-full py-2"
-            onClick={() => setShowLogin(false)}
-          >
-            Cancel
-          </Button>
-        </div>
-      </Modal>
+      {/* Shared sign-in surface — deliberately NOT a bespoke modal, so the
+          landing page can't drift from the gate the rest of the app uses. */}
+      {showLogin && (
+        <SignInGate
+          message="Sign in with Google to access your dashboard and save your progress."
+          onClose={() => setShowLogin(false)}
+        />
+      )}
     </div >
   );
 }

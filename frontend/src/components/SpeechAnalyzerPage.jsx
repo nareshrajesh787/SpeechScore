@@ -271,92 +271,12 @@ export default function SpeechAnalyzerPage() {
     return (
         <div className="bg-paper-100 min-h-screen">
             <Navbar />
-            <div
-                className={
-                    result
-                        ? "p-6 grid grid-cols-1 md:grid-cols-2 gap-4"
-                        : "p-6 grid grid-cols-1"
-                }
-            >
-                <Card variant="surface" padding="p-8" className="max-w-3xl mx-auto max-h-fit mt-12 shadow-lg">
-                    <h1 className="font-display font-semibold text-4xl text-center text-ink-800">
-                        <FontAwesomeIcon
-                            className="text-brand-600"
-                            icon={"bolt"}
-                        />{" "}<span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-700 to-brand-500">
-                            Analyze Your{" "}
-
-                            Speech
-                        </span>
-                    </h1>
-                    <p className="text-center font-medium text-paper-500 px-5 mt-4 mb-5">
-                        {mode === 'upload'
-                            ? 'Upload your recording or record directly in the browser. Provide your prompt and rubric for personalized AI feedback.'
-                            : 'Record your speech directly in the browser with Studio Mode. Pause, resume, and see real-time waveform visualization.'}
-                    </p>
-
-                    {error && (
-                        <div className="mb-6 p-4 bg-needs-work-50 border border-needs-work-200 rounded-xl text-needs-work-700 flex items-start gap-3">
-                            <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
-                            <div>
-                                <p className="font-semibold text-sm">Analysis Failed</p>
-                                <p className="text-sm opacity-90">{error}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {isLoading && (
-                        <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl text-brand-700 flex items-start gap-3">
-                            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-brand-600 mt-1 flex-shrink-0"></div>
-                            <div>
-                                <p className="font-semibold text-sm">
-                                    {isUploadingAudio ? 'Uploading your recording…' : 'Analyzing your speech…'}
-                                </p>
-                                <p className="text-sm opacity-90">
-                                    {isUploadingAudio
-                                        ? 'This should only take a few seconds.'
-                                        : `This can take a minute or two for longer recordings. ${elapsedSeconds}s elapsed.`}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Mode Toggle */}
-                    <Tabs
-                        tabs={[
-                            { id: 'upload', label: 'Upload File', icon: 'cloud-arrow-up' },
-                            { id: 'studio', label: 'Studio Mode', icon: 'microphone' },
-                        ]}
-                        activeTab={mode}
-                        onChange={setMode}
-                        className="mb-5"
-                    />
-
-                    {mode === 'studio' ? (
-                        <StudioMode
-                            onRecordingComplete={handleStudioRecording}
-                            onCancel={() => setMode('upload')}
-                        />
-                    ) : (
-                        <AnalyzerForm
-                            audioFile={audioFile}
-                            setAudioFile={setAudioFile}
-                            prompt={prompt}
-                            setPrompt={setPrompt}
-                            rubric={rubric}
-                            projectId={projectId}
-                            selectedScenario={selectedScenario}
-                            handleScenarioChange={handleScenarioChange}
-                            presetName={presetName}
-                            handleRubricChange={handleRubricChange}
-                            isLoading={isLoading}
-                            isUploadingAudio={isUploadingAudio}
-                            handleSubmit={handleSubmit}
-                        />
-                    )}
-                </Card>
-
-                {result && (
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+                {/* Once results exist they become the whole page. Previously the
+                    form and the results shared a cramped two-column grid, which
+                    gave the results half the width and left a now-irrelevant
+                    form competing for attention. "Try Another" brings it back. */}
+                {result ? (
                     <ResultPanel
                         result={result}
                         onTryAgain={() => {
@@ -364,6 +284,80 @@ export default function SpeechAnalyzerPage() {
                             setAudioBlob(null);
                         }}
                     />
+                ) : (
+                    <>
+                        <header className="mb-8">
+                            <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink-900 tracking-tight">
+                                Analyze your speech
+                            </h1>
+                            <p className="text-ink-600 mt-3 text-lg leading-relaxed">
+                                {mode === 'upload'
+                                    ? 'Upload a recording, tell the coach what you were practicing, and get scored feedback in a couple of minutes.'
+                                    : 'Record straight from your browser. Pause, resume, and watch the waveform as you go.'}
+                            </p>
+                        </header>
+
+                        {error && (
+                            <div className="mb-6 p-4 bg-needs-work-50 border border-needs-work-200 rounded-xl text-needs-work-700 flex items-start gap-3">
+                                <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
+                                <div>
+                                    <p className="font-semibold text-sm">Analysis failed</p>
+                                    <p className="text-sm opacity-90">{error}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {isLoading && (
+                            <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl text-brand-700 flex items-start gap-3">
+                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-brand-600 mt-1 flex-shrink-0"></div>
+                                <div>
+                                    <p className="font-semibold text-sm">
+                                        {isUploadingAudio ? 'Uploading your recording…' : 'Analyzing your speech…'}
+                                    </p>
+                                    <p className="text-sm opacity-90">
+                                        {isUploadingAudio
+                                            ? 'This should only take a few seconds.'
+                                            : `This can take a minute or two for longer recordings. ${elapsedSeconds}s elapsed.`}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <Tabs
+                            tabs={[
+                                { id: 'upload', label: 'Upload a file', icon: 'cloud-arrow-up' },
+                                { id: 'studio', label: 'Record here', icon: 'microphone' },
+                            ]}
+                            activeTab={mode}
+                            onChange={setMode}
+                            className="mb-6"
+                        />
+
+                        {mode === 'studio' ? (
+                            <StudioMode
+                                onRecordingComplete={handleStudioRecording}
+                                onCancel={() => setMode('upload')}
+                            />
+                        ) : (
+                            <Card padding="p-6 sm:p-8">
+                                <AnalyzerForm
+                                    audioFile={audioFile}
+                                    setAudioFile={setAudioFile}
+                                    prompt={prompt}
+                                    setPrompt={setPrompt}
+                                    rubric={rubric}
+                                    projectId={projectId}
+                                    selectedScenario={selectedScenario}
+                                    handleScenarioChange={handleScenarioChange}
+                                    presetName={presetName}
+                                    handleRubricChange={handleRubricChange}
+                                    isLoading={isLoading}
+                                    isUploadingAudio={isUploadingAudio}
+                                    handleSubmit={handleSubmit}
+                                />
+                            </Card>
+                        )}
+                    </>
                 )}
             </div>
         </div>

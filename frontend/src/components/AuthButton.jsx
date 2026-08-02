@@ -5,7 +5,19 @@ import { onAuthStateChanged } from 'firebase/auth';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
 
-export default function AuthButton() {
+/**
+ * The app's single sign-in / sign-out control.
+ *
+ * Every auth affordance in the app routes through this component — the Navbar,
+ * and the SignInGate that pages render when there is no user. Nothing should
+ * hand-roll its own login button or sign-in modal; that previously caused two
+ * competing "Login" buttons to appear on screen at the same time.
+ *
+ * Presentation is left to the caller via `variant`/`className` so the same
+ * control can sit quietly in the Navbar and read as the primary action inside
+ * a sign-in gate.
+ */
+export default function AuthButton({ variant = 'secondary', className = '' }) {
     const [user, setUser] = useState(null);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -17,34 +29,34 @@ export default function AuthButton() {
     const handleLogout = async () => {
         await logout();
         setShowLogoutConfirm(false);
-    }
+    };
 
     if (user) {
         return (
             <>
                 <Button
-                    variant="outline"
-                    className="w-full md:w-auto"
+                    variant={variant}
+                    className={className}
                     onClick={() => setShowLogoutConfirm(true)}
                 >
-                    Logout
+                    Sign out
                 </Button>
 
                 <Modal
                     isOpen={showLogoutConfirm}
                     onClose={() => setShowLogoutConfirm(false)}
-                    className="p-10 flex flex-col gap-4 items-center max-w-md w-full"
+                    className="p-8 flex flex-col gap-4 items-center max-w-sm w-full"
                     labelledBy="logout-confirm-heading"
                 >
-                    <h3 id="logout-confirm-heading" className="text-2xl font-bold text-ink-800 text-center mb-1">Sign Out</h3>
-                    <p className="text-paper-500 text-center mb-3">Are you sure you want to sign out?</p>
-
-                    <div className="flex flex-col gap-3 w-full">
-                        <Button
-                            onClick={handleLogout}
-                            className="w-full justify-center"
-                        >
-                            Yes, Sign Out
+                    <h3 id="logout-confirm-heading" className="font-display text-2xl font-semibold text-ink-900 text-center">
+                        Sign out?
+                    </h3>
+                    <p className="text-ink-500 text-center text-sm">
+                        You can sign back in any time — your projects and recordings stay saved.
+                    </p>
+                    <div className="flex flex-col gap-2 w-full mt-2">
+                        <Button onClick={handleLogout} className="w-full justify-center">
+                            Yes, sign out
                         </Button>
                         <Button
                             variant="subtle"
@@ -60,12 +72,8 @@ export default function AuthButton() {
     }
 
     return (
-        <Button
-            variant="outline"
-            className="w-full md:w-auto mx-auto"
-            onClick={loginWithGoogle}
-        >
-            Login
+        <Button variant={variant} className={className} onClick={loginWithGoogle}>
+            Sign in
         </Button>
     );
 }
