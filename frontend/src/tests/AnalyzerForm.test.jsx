@@ -32,22 +32,21 @@ function makeDataTransfer(files) {
 }
 
 describe('AnalyzerForm', () => {
-  it('renders the three numbered steps and the submit button', () => {
+  it('renders the hero dropzone, the context fields, and the submit button', () => {
     render(<AnalyzerForm {...makeDefaultProps()} />);
 
-    expect(screen.getByRole('heading', { name: /Your recording/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /What are you practicing\?/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /How should we score it\?/i })).toBeInTheDocument();
+    expect(screen.getByTestId('audio-dropzone')).toBeInTheDocument();
+    expect(screen.getByLabelText(/What are you practicing\?/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Evaluation rubric/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Analyze speech/i })).toBeInTheDocument();
   });
 
-  // Regression guard: the step titles are <h2>s, not <label>s. Every field
-  // still needs a real label association -- the prompt textarea briefly lost
-  // its label when the form was restructured into steps.
+  // Regression guard: every field needs a real label association, not just
+  // adjacent text that happens to look like one.
   it('keeps every field programmatically labelled', () => {
     render(<AnalyzerForm {...makeDefaultProps()} />);
 
-    expect(screen.getByLabelText(/Speech prompt/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/What are you practicing\?/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Evaluation rubric/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Scenario/i)).toBeInTheDocument();
   });
@@ -56,7 +55,7 @@ describe('AnalyzerForm', () => {
     render(<AnalyzerForm {...makeDefaultProps()} />);
 
     expect(screen.getByRole('button', { name: /Analyze speech/i })).toBeDisabled();
-    expect(screen.getByText(/Add a recording in step 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add a recording above/i)).toBeInTheDocument();
   });
 
   describe('selected-file state', () => {

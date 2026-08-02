@@ -72,7 +72,7 @@ async function submitWithFile() {
     fireEvent.change(fileInput, { target: { files: [file] } });
   });
 
-  const promptField = screen.getByLabelText(/Speech prompt/i);
+  const promptField = screen.getByLabelText(/What are you practicing\?/i);
   await act(async () => {
     fireEvent.change(promptField, { target: { value: 'Tell me about a challenge.' } });
   });

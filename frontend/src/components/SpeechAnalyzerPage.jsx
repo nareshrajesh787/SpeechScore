@@ -11,7 +11,6 @@ import ResultPanel from './ResultPanel';
 import Navbar from './Navbar';
 import StudioMode from './StudioMode';
 import AnalyzerForm from './AnalyzerForm';
-import Card from './ui/Card';
 import SignInGate from './ui/SignInGate';
 import Spinner from './ui/Spinner';
 import Tabs from './ui/Tabs';
@@ -271,7 +270,7 @@ export default function SpeechAnalyzerPage() {
     return (
         <div className="bg-paper-100 min-h-screen">
             <Navbar />
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
                 {/* Once results exist they become the whole page. Previously the
                     form and the results shared a cramped two-column grid, which
                     gave the results half the width and left a now-irrelevant
@@ -339,23 +338,21 @@ export default function SpeechAnalyzerPage() {
                                 onCancel={() => setMode('upload')}
                             />
                         ) : (
-                            <Card padding="p-6 sm:p-8">
-                                <AnalyzerForm
-                                    audioFile={audioFile}
-                                    setAudioFile={setAudioFile}
-                                    prompt={prompt}
-                                    setPrompt={setPrompt}
-                                    rubric={rubric}
-                                    projectId={projectId}
-                                    selectedScenario={selectedScenario}
-                                    handleScenarioChange={handleScenarioChange}
-                                    presetName={presetName}
-                                    handleRubricChange={handleRubricChange}
-                                    isLoading={isLoading}
-                                    isUploadingAudio={isUploadingAudio}
-                                    handleSubmit={handleSubmit}
-                                />
-                            </Card>
+                            <AnalyzerForm
+                                audioFile={audioFile}
+                                setAudioFile={setAudioFile}
+                                prompt={prompt}
+                                setPrompt={setPrompt}
+                                rubric={rubric}
+                                projectId={projectId}
+                                selectedScenario={selectedScenario}
+                                handleScenarioChange={handleScenarioChange}
+                                presetName={presetName}
+                                handleRubricChange={handleRubricChange}
+                                isLoading={isLoading}
+                                isUploadingAudio={isUploadingAudio}
+                                handleSubmit={handleSubmit}
+                            />
                         )}
                     </>
                 )}

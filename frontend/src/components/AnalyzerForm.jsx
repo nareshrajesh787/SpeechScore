@@ -19,27 +19,6 @@ const INPUT_CLASS =
     'w-full px-4 py-3 bg-white border border-paper-300 rounded-xl text-ink-800 placeholder:text-ink-400 ' +
     'focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors';
 
-/**
- * One numbered step of the worksheet. The analyzer used to be a single
- * undifferentiated column of four fields; numbering the decisions gives the
- * page a spine and matches the "coach's worksheet" direction.
- */
-const Step = ({ number, title, hint, children }) => (
-    <section className="border-t border-paper-300 pt-6 first:border-t-0 first:pt-0">
-        <div className="flex items-baseline gap-3 mb-1">
-            <span
-                aria-hidden="true"
-                className="font-display text-sm font-semibold text-brand-600 bg-brand-50 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"
-            >
-                {number}
-            </span>
-            <h2 className="font-display text-lg font-semibold text-ink-900">{title}</h2>
-        </div>
-        {hint && <p className="text-sm text-ink-500 mb-4 ml-9">{hint}</p>}
-        <div className="sm:ml-9">{children}</div>
-    </section>
-);
-
 export default function AnalyzerForm({
     audioFile,
     setAudioFile,
@@ -77,147 +56,149 @@ export default function AnalyzerForm({
     const busy = isLoading || isUploadingAudio;
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <Step
-                number={1}
-                title="Your recording"
-                hint="Drop in an audio file, or switch to Studio Mode to record right here."
-            >
-                <input
-                    type="file"
-                    id="audio-upload"
-                    name="audioFile"
-                    accept="audio/*"
-                    required={!audioFile}
-                    className="sr-only"
-                    onChange={(e) => setAudioFile(e.target.files[0])}
-                />
+        <form onSubmit={handleSubmit} className="space-y-8">
+            <input
+                type="file"
+                id="audio-upload"
+                name="audioFile"
+                accept="audio/*"
+                required={!audioFile}
+                className="sr-only"
+                onChange={(e) => setAudioFile(e.target.files[0])}
+            />
 
-                {audioFile ? (
-                    // Selected state. The old form only swapped the dropzone's
-                    // caption to the filename, which read as "nothing happened".
-                    <div className="flex items-center gap-4 p-4 bg-good-50 border border-good-200 rounded-xl">
-                        <div className="w-10 h-10 rounded-lg bg-good-100 flex items-center justify-center flex-shrink-0">
-                            <FontAwesomeIcon icon="file-audio" className="text-good-700" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-ink-800 truncate">{audioFile.name}</p>
-                            <p className="text-xs text-good-700">
-                                <FontAwesomeIcon icon="circle-check" className="mr-1" />
-                                Ready to analyze · {formatBytes(audioFile.size)}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                            <Button as="label" htmlFor="audio-upload" variant="subtle" className="cursor-pointer text-sm">
-                                Replace
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="subtle"
-                                size="icon"
-                                onClick={() => setAudioFile(null)}
-                                title="Remove file"
-                            >
-                                <span className="sr-only">Remove file</span>
-                                <FontAwesomeIcon icon="times" />
-                            </Button>
-                        </div>
+            {/* The recording is the whole point of this page, so it gets the
+                full-width hero treatment instead of living inside a boxed
+                "step" like the other fields. Both states keep a similar
+                footprint so choosing a file doesn't cause the page to jump. */}
+            {audioFile ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 border-2 border-good-200 bg-good-50 rounded-3xl px-6 py-10 sm:py-12 text-center sm:text-left">
+                    <div className="w-14 h-14 rounded-2xl bg-good-100 flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+                        <FontAwesomeIcon icon="file-audio" className="text-good-700 text-xl" />
                     </div>
-                ) : (
-                    <label
-                        htmlFor="audio-upload"
-                        data-testid="audio-dropzone"
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        className={`group flex flex-col items-center justify-center text-center border-2 border-dashed rounded-xl px-6 py-10 cursor-pointer transition-colors ${isDragging
-                            ? 'border-brand-500 bg-brand-50'
-                            : 'border-paper-400 bg-paper-50 hover:border-brand-400 hover:bg-brand-50/40'
-                            }`}
-                    >
-                        <FontAwesomeIcon
-                            icon="cloud-arrow-up"
-                            className={`text-4xl mb-3 transition-transform duration-300 group-hover:scale-110 ${isDragging ? 'text-brand-600' : 'text-paper-500'}`}
-                        />
-                        <p className="text-sm font-semibold text-ink-800">
-                            {isDragging ? 'Drop to upload' : 'Drop an audio file here, or browse'}
+                    <div className="min-w-0 flex-1">
+                        <p className="font-display text-xl font-semibold text-ink-900 truncate">{audioFile.name}</p>
+                        <p className="text-sm text-good-700 mt-1">
+                            <FontAwesomeIcon icon="circle-check" className="mr-1" />
+                            Ready to analyze · {formatBytes(audioFile.size)}
                         </p>
-                        <p className="text-xs text-ink-500 mt-1">MP3, WAV, M4A · up to 20MB</p>
-                    </label>
-                )}
-            </Step>
-
-            <Step
-                number={2}
-                title="What are you practicing?"
-                hint="The prompt you're responding to. The coach uses this to judge whether you actually answered it."
-            >
-                {/* The step heading is an <h2>, which is not a label, so the
-                    association has to be made explicitly. Visually hidden
-                    because the heading already says this on screen. */}
-                <label htmlFor="prompt" className="sr-only">Speech prompt</label>
-                <textarea
-                    name="prompt"
-                    value={prompt}
-                    required
-                    className={INPUT_CLASS}
-                    id="prompt"
-                    rows="3"
-                    placeholder="e.g. 'Describe a challenge you overcame' — or paste your assignment question"
-                    onChange={(e) => setPrompt(e.target.value)}
-                />
-            </Step>
-
-            <Step
-                number={3}
-                title="How should we score it?"
-                hint="Pick a scenario to load a ready-made rubric, then tweak it if you like."
-            >
-                {!projectId && (
-                    <div className="mb-4">
-                        <label htmlFor="scenario-preset" className="block text-sm font-semibold text-ink-700 mb-2">
-                            Scenario
-                        </label>
-                        <select
-                            id="scenario-preset"
-                            value={selectedScenario}
-                            onChange={handleScenarioChange}
-                            className={INPUT_CLASS}
-                        >
-                            {Object.keys(RUBRIC_PRESETS).map((key) => (
-                                <option key={key} value={key}>{key}</option>
-                            ))}
-                        </select>
                     </div>
-                )}
-
-                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                    <label htmlFor="rubric" className="text-sm font-semibold text-ink-700">
-                        Evaluation rubric
-                    </label>
-                    {presetName && presetName !== 'Custom' && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-100">
-                            Using the "{presetName}" preset
-                        </span>
-                    )}
+                    <div className="flex items-center gap-2 justify-center flex-shrink-0">
+                        <Button as="label" htmlFor="audio-upload" variant="secondary" className="cursor-pointer">
+                            Replace
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="subtle"
+                            size="icon"
+                            onClick={() => setAudioFile(null)}
+                            title="Remove file"
+                        >
+                            <span className="sr-only">Remove file</span>
+                            <FontAwesomeIcon icon="times" />
+                        </Button>
+                    </div>
                 </div>
-                <textarea
-                    name="rubric"
-                    value={rubric}
-                    required
-                    className={INPUT_CLASS}
-                    id="rubric"
-                    rows="3"
-                    placeholder="e.g. 'Content clarity, supporting evidence, engagement…'"
-                    onChange={handleRubricChange}
-                />
-            </Step>
+            ) : (
+                <label
+                    htmlFor="audio-upload"
+                    data-testid="audio-dropzone"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`group flex flex-col items-center justify-center text-center border-2 border-dashed rounded-3xl px-6 py-16 sm:py-20 cursor-pointer transition-colors ${isDragging
+                        ? 'border-brand-500 bg-brand-50'
+                        : 'border-paper-400 bg-paper-50 hover:border-brand-400 hover:bg-brand-50/40'
+                        }`}
+                >
+                    <FontAwesomeIcon
+                        icon="cloud-arrow-up"
+                        className={`text-5xl sm:text-6xl mb-4 transition-transform duration-300 group-hover:scale-110 ${isDragging ? 'text-brand-600' : 'text-paper-500'}`}
+                    />
+                    <p className="font-display text-xl sm:text-2xl font-semibold text-ink-900">
+                        {isDragging ? 'Drop to upload' : 'Drop your recording here'}
+                    </p>
+                    <p className="text-sm text-ink-500 mt-2">or click to browse · MP3, WAV, M4A · up to 20MB</p>
+                </label>
+            )}
 
-            <div className="border-t border-paper-300 pt-6">
+            {/* Context strip. Two fields side by side instead of stacked, so
+                they read as quick supporting details rather than more of the
+                same "step" the recording just was. */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label htmlFor="prompt" className="block text-sm font-semibold text-ink-800 mb-1">
+                        What are you practicing?
+                    </label>
+                    <p className="text-xs text-ink-500 mb-3">
+                        The coach checks whether you actually answered this.
+                    </p>
+                    <textarea
+                        name="prompt"
+                        value={prompt}
+                        required
+                        className={INPUT_CLASS}
+                        id="prompt"
+                        rows="4"
+                        placeholder="e.g. 'Describe a challenge you overcame' — or paste your assignment question"
+                        onChange={(e) => setPrompt(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="rubric" className="block text-sm font-semibold text-ink-800 mb-1">
+                        How should we score it?
+                    </label>
+                    <p className="text-xs text-ink-500 mb-3">
+                        Pick a scenario for a ready-made rubric, or write your own.
+                    </p>
+
+                    {!projectId && (
+                        <div className="mb-3">
+                            <label htmlFor="scenario-preset" className="block text-xs font-semibold text-ink-600 uppercase tracking-wide mb-1.5">
+                                Scenario
+                            </label>
+                            <select
+                                id="scenario-preset"
+                                value={selectedScenario}
+                                onChange={handleScenarioChange}
+                                className={INPUT_CLASS}
+                            >
+                                {Object.keys(RUBRIC_PRESETS).map((key) => (
+                                    <option key={key} value={key}>{key}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
+                        <label htmlFor="rubric" className="text-xs font-semibold text-ink-600 uppercase tracking-wide">
+                            Evaluation rubric
+                        </label>
+                        {presetName && presetName !== 'Custom' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-100">
+                                Using the "{presetName}" preset
+                            </span>
+                        )}
+                    </div>
+                    <textarea
+                        name="rubric"
+                        value={rubric}
+                        required
+                        className={INPUT_CLASS}
+                        id="rubric"
+                        rows="4"
+                        placeholder="e.g. 'Content clarity, supporting evidence, engagement…'"
+                        onChange={handleRubricChange}
+                    />
+                </div>
+            </div>
+
+            <div>
                 <Button
                     type="submit"
                     disabled={!audioFile || busy}
-                    className="w-full py-3 text-base"
+                    className="w-full py-4 text-base"
                 >
                     {isUploadingAudio ? 'Uploading audio…' : isLoading ? 'Analyzing…' : (
                         <>
@@ -228,7 +209,7 @@ export default function AnalyzerForm({
                 </Button>
                 {!audioFile && (
                     <p className="text-xs text-ink-500 text-center mt-3">
-                        Add a recording in step 1 to get started.
+                        Add a recording above to get started.
                     </p>
                 )}
             </div>
