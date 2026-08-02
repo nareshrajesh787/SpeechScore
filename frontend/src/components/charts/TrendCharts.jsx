@@ -3,6 +3,7 @@ import {
     Line,
     BarChart,
     Bar,
+    Cell,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -14,6 +15,23 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Card from '../ui/Card';
 import EmptyState from '../ui/EmptyState';
+
+// Mirrors the threshold logic in `ui/Metric.jsx`'s `getMetricTone('fillers', value,
+// { durationSeconds })` so the trend chart and the metric tiles elsewhere in the app
+// always agree on what counts as good/caution/needs-work. Kept local (not imported)
+// because that file is component-focused and this is a chart concern.
+function fillerBarColor({ fillers, durationSeconds }) {
+    // Fillers-per-minute when duration is known; otherwise fall back to the raw
+    // count. The fallback is length-dependent (a long recording will look worse
+    // than it is) but matches the same caveat used by getMetricTone.
+    const rate = Number.isFinite(durationSeconds) && durationSeconds > 0
+        ? fillers / (durationSeconds / 60)
+        : fillers;
+
+    if (rate <= 3) return '#5C8A6A'; // good-500
+    if (rate <= 8) return '#C6952F'; // caution-500
+    return '#C26550'; // needs-work-500
+}
 
 export default function TrendCharts({ recordings }) {
     // Transform recordings data for charts
@@ -40,16 +58,23 @@ export default function TrendCharts({ recordings }) {
             wpm: recording.wpm || 0,
             fillers: totalFillers,
             clarity: recording.clarity_score || 0,
+            durationSeconds: recording.audio_duration,
             draft: index + 1
         };
     });
 
     // Custom tooltip styled to match Card component
-    const CustomTooltip = ({ active, payload, label }) => {
+    const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
+            const point = payload[0].payload;
+            const dateLabel = point.fullDate instanceof Date
+                ? point.fullDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : null;
+            const header = dateLabel ? `Draft ${point.draft} · ${dateLabel}` : `Draft ${point.draft}`;
+
             return (
                 <div className="bg-white rounded-xl shadow-md border border-brand-50/50 p-4">
-                    <p className="text-sm font-semibold text-ink-800 mb-2">{label}</p>
+                    <p className="text-sm font-semibold text-ink-800 mb-2">{header}</p>
                     {payload.map((entry, index) => (
                         <p key={index} className="text-sm" style={{ color: entry.color }}>
                             {entry.name}: <span className="font-bold">{entry.value}</span>
@@ -86,16 +111,21 @@ export default function TrendCharts({ recordings }) {
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E8E2D9" />
                         <XAxis
-                            dataKey="name"
-                            stroke="#6b7280"
+                            dataKey="draft"
+                            tickFormatter={(value) => `Draft ${value}`}
+                            stroke="#4E5566"
                             style={{ fontSize: '12px' }}
                         />
                         <YAxis
-                            stroke="#6b7280"
+                            stroke="#4E5566"
                             style={{ fontSize: '12px' }}
-                            label={{ value: 'WPM', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
+                            domain={[
+                                (dataMin) => Math.max(0, Math.floor(dataMin / 10) * 10 - 10),
+                                (dataMax) => Math.ceil(dataMax / 10) * 10 + 10
+                            ]}
+                            label={{ value: 'WPM', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#4E5566' } }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <ReferenceArea
@@ -123,9 +153,9 @@ export default function TrendCharts({ recordings }) {
                         <Line
                             type="monotone"
                             dataKey="wpm"
-                            stroke="#4f46e5"
+                            stroke="#3F51B0"
                             strokeWidth={2}
-                            dot={{ fill: '#4f46e5', r: 4 }}
+                            dot={{ fill: '#3F51B0', r: 4 }}
                             activeDot={{ r: 6 }}
                         />
                     </LineChart>
@@ -145,23 +175,28 @@ export default function TrendCharts({ recordings }) {
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E8E2D9" />
                         <XAxis
-                            dataKey="name"
-                            stroke="#6b7280"
+                            dataKey="draft"
+                            tickFormatter={(value) => `Draft ${value}`}
+                            stroke="#4E5566"
                             style={{ fontSize: '12px' }}
                         />
                         <YAxis
-                            stroke="#6b7280"
+                            stroke="#4E5566"
                             style={{ fontSize: '12px' }}
-                            label={{ value: 'Fillers', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
+                            label={{ value: 'Fillers', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#4E5566' } }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar
                             dataKey="fillers"
-                            fill="#dc2626"
+                            fill="#3F51B0"
                             radius={[8, 8, 0, 0]}
-                        />
+                        >
+                            {chartData.map((entry, index) => (
+                                <Cell key={`filler-cell-${index}`} fill={fillerBarColor(entry)} />
+                            ))}
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </Card>
@@ -179,25 +214,29 @@ export default function TrendCharts({ recordings }) {
                 </div>
                 <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E8E2D9" />
                         <XAxis
-                            dataKey="name"
-                            stroke="#6b7280"
+                            dataKey="draft"
+                            tickFormatter={(value) => `Draft ${value}`}
+                            stroke="#4E5566"
                             style={{ fontSize: '12px' }}
                         />
                         <YAxis
-                            stroke="#6b7280"
+                            stroke="#4E5566"
                             style={{ fontSize: '12px' }}
-                            domain={[0, 10]}
-                            label={{ value: 'Clarity', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
+                            domain={[
+                                (dataMin) => Math.max(0, Math.floor(dataMin) - 1),
+                                (dataMax) => Math.min(10, Math.ceil(dataMax) + 1)
+                            ]}
+                            label={{ value: 'Clarity', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#4E5566' } }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line
                             type="monotone"
                             dataKey="clarity"
-                            stroke="#4f46e5"
+                            stroke="#3F51B0"
                             strokeWidth={2}
-                            dot={{ fill: '#4f46e5', r: 4 }}
+                            dot={{ fill: '#3F51B0', r: 4 }}
                             activeDot={{ r: 6 }}
                         />
                     </LineChart>

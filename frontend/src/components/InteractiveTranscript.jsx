@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import Button from './ui/Button';
@@ -130,27 +130,40 @@ export default function InteractiveTranscript({
                     wordCount = 2;
                 }
 
+                // The playing-word indicator (ring + scale) layers on top of the
+                // filler treatment rather than overriding it, so a word that is
+                // both a filler and the currently-playing word stays readable as
+                // "marked with a highlighter" while still showing it's playing.
+                const highlightedClasses = isHighlighted
+                    ? `inline-block scale-105 ${isFiller || isPair ? 'ring-2 ring-brand-400' : 'bg-brand-200'}`
+                    : '';
+                const fillerClasses = isFiller || isPair
+                    ? 'px-0.5 bg-highlighter text-ink-800 hover:bg-highlighter-strong'
+                    : 'text-ink-700 hover:bg-brand-50';
+
                 const className = `
-                    inline-block px-1 mx-0.5 rounded transition-all cursor-pointer
+                    rounded transition-all cursor-pointer
                     focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1
-                    ${isHighlighted ? 'bg-brand-200 scale-105' : ''}
-                    ${isFiller || isPair ? 'text-needs-work-600 bg-needs-work-50 border-b-2 border-needs-work-200 hover:bg-needs-work-100' : 'text-ink-700 hover:bg-brand-50'}
+                    ${highlightedClasses}
+                    ${fillerClasses}
                 `.trim();
 
                 return (
-                    <span
-                        key={index}
-                        id={`word-${index}`}
-                        className={className}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleWordClick(index)}
-                        onKeyDown={(e) => handleWordKeyDown(e, index)}
-                        title={`Click to play from "${displayText}" (${(word.start / 1000).toFixed(2)}s)`}
-                        aria-label={`Play from "${displayText}" at ${(word.start / 1000).toFixed(2)} seconds`}
-                    >
-                        {displayText}
-                    </span>
+                    <Fragment key={index}>
+                        <span
+                            id={`word-${index}`}
+                            className={className}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleWordClick(index)}
+                            onKeyDown={(e) => handleWordKeyDown(e, index)}
+                            title={`Click to play from "${displayText}" (${(word.start / 1000).toFixed(2)}s)`}
+                            aria-label={`Play from "${displayText}" at ${(word.start / 1000).toFixed(2)} seconds`}
+                        >
+                            {displayText}
+                        </span>
+                        {' '}
+                    </Fragment>
                 );
             }).filter(Boolean);
         } else {
@@ -171,14 +184,14 @@ export default function InteractiveTranscript({
                 if (isPair) {
                     return (
                         <span key={index}>
-                            <span className="text-needs-work-600 bg-needs-work-50 border-b-2 border-needs-work-200 rounded-md px-1 cursor-pointer hover:bg-needs-work-100">
+                            <span className="bg-highlighter text-ink-800 rounded-md px-1 cursor-pointer hover:bg-highlighter-strong">
                                 {word} {nextWord}
                             </span>{' '}
                         </span>
                     );
                 } else if (isFiller) {
                     return (
-                        <span key={index} className="text-needs-work-600 bg-needs-work-50 border-b-2 border-needs-work-200 rounded-md px-1 cursor-pointer hover:bg-needs-work-100">
+                        <span key={index} className="bg-highlighter text-ink-800 rounded-md px-1 cursor-pointer hover:bg-highlighter-strong">
                             {word}{' '}
                         </span>
                     );
@@ -229,9 +242,9 @@ export default function InteractiveTranscript({
             <div className="mt-4 text-xs text-paper-500">
                 <FontAwesomeIcon icon="info-circle" className="mr-1" />
                 {audioUrl ? (
-                    <>Click any word to jump to that moment in the audio. Filler words are highlighted in red.</>
+                    <>Click any word to jump to that moment in the audio. Filler words are highlighted for you to work on.</>
                 ) : (
-                    <>Filler words are highlighted in red. Audio playback is not available for this recording.</>
+                    <>Filler words are highlighted for you to work on. Audio playback is not available for this recording.</>
                 )}
             </div>
         </div>

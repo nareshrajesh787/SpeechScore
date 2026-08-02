@@ -40,7 +40,7 @@ describe('CoachChat send button', () => {
   it('is disabled and shows the muted disabled treatment when the input is empty', () => {
     render(<CoachChat transcript="hello" rubricFeedback={{}} />);
 
-    const sendButton = screen.getByRole('button');
+    const sendButton = screen.getByRole('button', { name: /send message/i });
     expect(sendButton).toBeDisabled();
     expect(sendButton.className).toContain('disabled:text-ink-400');
     // Icon-only sizing, not the default px-4 py-2 pill.
@@ -55,7 +55,7 @@ describe('CoachChat send button', () => {
     const textarea = screen.getByPlaceholderText(/ask a question/i);
     fireEvent.change(textarea, { target: { value: 'How was my pacing?' } });
 
-    const sendButton = screen.getByRole('button');
+    const sendButton = screen.getByRole('button', { name: /send message/i });
     expect(sendButton).toBeEnabled();
 
     fireEvent.click(sendButton);
@@ -69,5 +69,49 @@ describe('CoachChat send button', () => {
         headers: expect.objectContaining({ Authorization: 'Bearer fake-token' }),
       })
     );
+  });
+});
+
+// Coverage for the empty-state starter-prompt chips added so the "Ask the
+// Coach" box isn't just an empty box with no suggested questions.
+describe('CoachChat starter prompt chips', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ response: 'Here is some coaching feedback.' }),
+    });
+  });
+
+  it('sends the exact chip text when clicked, not a stale/empty input value', async () => {
+    render(<CoachChat transcript="hello" rubricFeedback={{}} />);
+
+    const chip = screen.getByText("How do I sound more confident?");
+    fireEvent.click(chip);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
+
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.user_question).toBe("How do I sound more confident?");
+  });
+
+  it('hides the starter chips once a conversation has started', async () => {
+    render(<CoachChat transcript="hello" rubricFeedback={{}} />);
+
+    expect(screen.getByText("How's my introduction?")).toBeInTheDocument();
+
+    const chip = screen.getByText("Am I speaking too fast?");
+    fireEvent.click(chip);
+
+    await waitFor(() => {
+      expect(screen.getByText('Here is some coaching feedback.')).toBeInTheDocument();
+    });
+
+    // Query by button role (not text) since the clicked chip's text also
+    // legitimately reappears as the echoed user-message bubble — a <div>,
+    // not a chip <button> — once the conversation has started.
+    expect(screen.queryByRole('button', { name: "How's my introduction?" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "Am I speaking too fast?" })).not.toBeInTheDocument();
   });
 });

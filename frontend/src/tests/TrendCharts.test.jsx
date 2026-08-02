@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock FontAwesomeIcon to avoid needing to load icons
@@ -81,5 +81,74 @@ describe('TrendCharts clarity scale', () => {
 
     expect(screen.getByText('Not enough data yet')).toBeInTheDocument();
     expect(screen.queryByText(/Speech clarity score/)).not.toBeInTheDocument();
+  });
+});
+
+describe('TrendCharts WPM domain', () => {
+  it('tightens the WPM YAxis instead of zero-flooring it on a 0-200 auto range', () => {
+    // dataMin=142, dataMax=182. Per the padding formula:
+    //   lower = max(0, floor(142/10)*10 - 10) = max(0, 130) = 130
+    //   upper = ceil(182/10)*10 + 10 = 190 + 10 = 200
+    // Recharts' own "nice tick" rounding can still round the *lower* bound
+    // outward to the next round step (observed: 130 -> 120 with a step of
+    // 20), so we don't assert the tick lands on exactly 130. What matters is
+    // that it's nowhere near the old zero-floored auto range, which for this
+    // data would have produced ticks like 0/50/100/150/200.
+    const recordings = [
+      makeRecording(2, { wpm: 142 }),
+      makeRecording(0, { wpm: 182 }),
+    ];
+
+    const { container } = render(<TrendCharts recordings={recordings} />);
+
+    // WPM is the first chart (WPM, Fillers, Clarity).
+    const wpmSvg = container.querySelectorAll('svg')[0];
+    const tickTexts = Array.from(wpmSvg.querySelectorAll('.recharts-yAxis-tick-labels tspan'))
+      .map((el) => el.textContent);
+
+    expect(tickTexts.length).toBeGreaterThan(0);
+    const tickValues = tickTexts.map(Number);
+
+    expect(tickValues.some((v) => v === 0)).toBe(false);
+    expect(tickValues.every((v) => v >= 100)).toBe(true);
+  });
+});
+
+describe('TrendCharts x-axis', () => {
+  it('labels the x-axis with draft numbers instead of raw calendar dates', () => {
+    const recordings = [makeRecording(2), makeRecording(0)];
+
+    render(<TrendCharts recordings={recordings} />);
+
+    // The same "Draft N" tick renders once per chart (WPM, Fillers, Clarity).
+    expect(screen.getAllByText('Draft 1').length).toBe(3);
+    expect(screen.getAllByText('Draft 2').length).toBe(3);
+  });
+});
+
+describe('TrendCharts filler bar coloring', () => {
+  it('colors bars by absolute filler-rate thresholds, not a single flat color', async () => {
+    const recordings = [
+      // 1 filler / 120s = 0.5/min -> good
+      makeRecording(2, { filler_count: { um: 1 }, audio_duration: 120 }),
+      // 20 fillers / 60s = 20/min -> needs-work
+      makeRecording(0, { filler_count: { um: 20 }, audio_duration: 60 }),
+    ];
+
+    const { container } = render(<TrendCharts recordings={recordings} />);
+
+    // Bar shapes render via a react-smooth animation that doesn't paint
+    // synchronously in jsdom, so wait for the <path> elements to appear.
+    let bars;
+    await waitFor(() => {
+      const fillerSvg = container.querySelectorAll('svg')[1];
+      bars = fillerSvg.querySelectorAll('.recharts-bar-rectangle path');
+      expect(bars.length).toBe(2);
+    }, { timeout: 8000 });
+
+    const fills = Array.from(bars).map((bar) => bar.getAttribute('fill'));
+    expect(fills[0]).toBe('#5C8A6A'); // good-500
+    expect(fills[1]).toBe('#C26550'); // needs-work-500
+    expect(fills[0]).not.toBe(fills[1]);
   });
 });

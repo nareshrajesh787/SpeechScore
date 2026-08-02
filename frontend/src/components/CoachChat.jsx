@@ -5,6 +5,13 @@ import { API_URL } from "../config";
 import { auth } from "../firebase";
 import Button from "./ui/Button";
 
+const STARTER_PROMPTS = [
+    "How's my introduction?",
+    "Am I speaking too fast?",
+    "What should I improve most?",
+    "How do I sound more confident?",
+];
+
 export default function CoachChat({ transcript, rubricFeedback }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
@@ -19,10 +26,15 @@ export default function CoachChat({ transcript, rubricFeedback }) {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+    // Accepts an explicit question string (used by starter-prompt chips) so
+    // callers aren't forced to rely on the `input` state, which — due to
+    // React's state batching — would still hold the OLD value if a chip's
+    // onClick did `setInput(chipText)` followed immediately by `handleSend()`.
+    const handleSend = async (explicitQuestion) => {
+        const question = (typeof explicitQuestion === "string" ? explicitQuestion : input).trim();
+        if (!question || isLoading) return;
 
-        const userMsg = { role: "user", content: input };
+        const userMsg = { role: "user", content: question };
         setMessages((prev) => [...prev, userMsg]);
         setInput("");
         setIsLoading(true);
@@ -100,6 +112,19 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                     <p className="max-w-xs">
                         I've analyzed your speech. Ask me specifically about your intro, pacing, or how to improve specific sections!
                     </p>
+                    <div className="flex flex-wrap gap-2 justify-center mt-4 max-w-sm">
+                        {STARTER_PROMPTS.map((prompt) => (
+                            <button
+                                key={prompt}
+                                type="button"
+                                onClick={() => handleSend(prompt)}
+                                disabled={isLoading}
+                                className="rounded-full px-3 py-1.5 text-xs sm:text-sm bg-brand-50 text-brand-700 border border-brand-100 hover:bg-brand-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-50 transition-colors"
+                            >
+                                {prompt}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -159,6 +184,7 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
                         className="absolute right-2 top-1/2 -translate-y-1/2"
+                        aria-label="Send message"
                     >
                         <FontAwesomeIcon icon="paper-plane" />
                     </Button>

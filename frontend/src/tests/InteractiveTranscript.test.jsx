@@ -96,3 +96,53 @@ describe('InteractiveTranscript keyboard access', () => {
     expect(audio.play).not.toHaveBeenCalled();
   });
 });
+
+describe('InteractiveTranscript filler word styling', () => {
+  beforeEach(() => {
+    HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+    HTMLMediaElement.prototype.pause = vi.fn();
+  });
+
+  it('marks a filler word with the highlighter treatment, not the old red-error classes', () => {
+    render(
+      <InteractiveTranscript
+        transcript="Hello um world"
+        wordTimestamps={[
+          { text: 'Hello', start: 0, end: 500 },
+          { text: 'um', start: 500, end: 800 },
+          { text: 'world', start: 800, end: 1200 },
+        ]}
+        fillerCount={{ um: 1 }}
+        audioUrl="blob:fake-audio-url"
+        audioDuration={1.2}
+      />
+    );
+
+    const fillerWord = screen.getByText('um');
+    expect(fillerWord).toHaveClass('bg-highlighter');
+    expect(fillerWord).not.toHaveClass('bg-needs-work-50');
+    expect(fillerWord).not.toHaveClass('border-needs-work-200');
+  });
+
+  it('renders consecutive non-filler words as separate elements with a single space between them', () => {
+    render(
+      <InteractiveTranscript
+        transcript="Hello world"
+        wordTimestamps={wordTimestamps}
+        fillerCount={{}}
+        audioUrl="blob:fake-audio-url"
+        audioDuration={1}
+      />
+    );
+
+    const hello = screen.getByText('Hello');
+    const world = screen.getByText('world');
+    // Each span's own text content stays exactly equal to the word itself
+    // (no baked-in trailing space), while the shared container reads as
+    // ordinary prose with a single space between words.
+    expect(hello.textContent).toBe('Hello');
+    expect(world.textContent).toBe('world');
+    expect(hello.parentElement.textContent).toMatch(/Hello world(?!\S)/);
+    expect(hello.parentElement.textContent).not.toContain('Helloworld');
+  });
+});
