@@ -12,5 +12,9 @@ export default defineConfig({
     alias: {
       './runtimeConfig': './runtimeConfig.browser',
     }
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true
   }
 })

@@ -1,16 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useNavigate, Link } from 'react-router-dom';
-import { collection, query, getDocs, where, addDoc, Timestamp, getCountFromServer } from 'firebase/firestore';
+import { collection, query, getDocs, where, addDoc, Timestamp, getCountFromServer, orderBy, limit } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
+import { formatRelativeDate } from '../utils/formatDate';
 import Navbar from './Navbar';
 import ResultPanel from './ResultPanel';
-import AuthButton from './AuthButton.jsx';
 import Card from './ui/Card';
 import Button from './ui/Button';
+import Modal from './ui/Modal';
+import SignInGate from './ui/SignInGate';
+import Spinner from './ui/Spinner';
+import EmptyState from './ui/EmptyState';
+import Sparkline from './ui/Sparkline';
+import { getMetricTone } from './ui/Metric';
 import RecordingCard from './RecordingCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { motion } from 'framer-motion';
+
+// Static tone -> class maps. Tailwind's JIT scanner needs literal class
+// strings in source; `bg-${tone}-50` interpolation would silently produce no
+// CSS at build time.
+const SCORE_PILL_CLASSES = {
+    good: 'bg-good-50 text-good-700 border-good-200',
+    caution: 'bg-caution-50 text-caution-700 border-caution-200',
+    'needs-work': 'bg-needs-work-50 text-needs-work-700 border-needs-work-200',
+    neutral: 'bg-paper-200 text-ink-600 border-paper-300',
+};
 
 export default function Dashboard() {
     const [user, loading, error] = useAuthState(auth);
@@ -22,6 +39,7 @@ export default function Dashboard() {
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectDescription, setNewProjectDescription] = useState('');
     const [newProjectRubricPreset, setNewProjectRubricPreset] = useState('General Speaking');
+    const [formError, setFormError] = useState(null);
 
     useEffect(() => {
         if (!user) return;
@@ -49,6 +67,20 @@ export default function Dashboard() {
                         const recordingsRef = collection(db, `users/${user.uid}/projects/${doc.id}/recordings`);
                         const countSnapshot = await getCountFromServer(recordingsRef);
                         projectData.recordingCount = countSnapshot.data().count;
+
+                        // A handful of recent recordings, for the card's
+                        // sparkline + latest-score pill. Newest-first from
+                        // Firestore, reversed to chronological (oldest first)
+                        // to match the sparkline's left-to-right reading.
+                        const recentSnap = await getDocs(
+                            query(recordingsRef, orderBy('createdAt', 'desc'), limit(8))
+                        );
+                        const recent = recentSnap.docs.map((d) => d.data()).reverse();
+                        projectData.scoreTrend = recent
+                            .filter((r) => Number.isFinite(r.rubric_total) && Number.isFinite(r.rubric_max) && r.rubric_max > 0)
+                            .map((r) => (r.rubric_total / r.rubric_max) * 100);
+                        projectData.latestRecording = recent.length ? recent[recent.length - 1] : null;
+
                         return projectData;
                     })
                 );
@@ -69,7 +101,7 @@ export default function Dashboard() {
 
     const handleCreateProject = async () => {
         if (!newProjectName.trim()) {
-            alert('Please enter a project name');
+            setFormError('Please enter a project name');
             return;
         }
 
@@ -79,256 +111,319 @@ export default function Dashboard() {
                 description: newProjectDescription.trim() || '',
                 rubricPreset: newProjectRubricPreset,
                 createdAt: Timestamp.now(),
+                uid: user.uid,
             });
             setShowNewProjectModal(false);
             setNewProjectName('');
             setNewProjectDescription('');
             setNewProjectRubricPreset('General Speaking');
+            setFormError(null);
             navigate(`/project/${projectRef.id}`);
         } catch (error) {
             console.error('Error creating project:', error);
-            alert('Failed to create project');
+            setFormError('Failed to create project');
         }
     };
 
+    const closeNewProjectModal = () => {
+        setShowNewProjectModal(false);
+        setFormError(null);
+    };
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
+    };
+
     if (loading) {
-        return (
-            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading your dashboard...</p>
-                </div>
-            </div>
-        );
+        return <Spinner size="lg" label="Loading your dashboard..." fullScreen />;
     }
     if (error) {
         return (
-            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
+            <div className="bg-paper-100 min-h-screen flex items-center justify-center">
                 <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
-                    <div className="text-red-500 text-4xl mb-4">⚠️</div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Error</h2>
-                    <p className="text-gray-600">{error.message}</p>
+                    <div className="text-needs-work-500 text-4xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-bold text-ink-800 mb-2">Error</h2>
+                    <p className="text-ink-600">{error.message}</p>
                 </div>
             </div>
         );
     }
 
     if (!user) {
-        return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <Card className="flex flex-col gap-4 items-center max-w-md w-full shadow-2xl" padding="p-10">
-                    <FontAwesomeIcon icon="user-circle" className="text-indigo-400 text-6xl mb-2" />
-                    <h2 className="font-bold text-2xl text-gray-800 text-center mb-1">Sign in Required</h2>
-                    <p className="text-gray-500 text-center mb-3">Sign in with Google to view your dashboard and saved analyses.</p>
-                    <div className="flex flex-col items-center w-full gap-2">
-                        <AuthButton />
-                    </div>
-                </Card>
-            </div>
-        );
+        return <SignInGate message="Sign in with Google to view your dashboard and saved analyses." />;
     }
 
     return (
-        <div className="bg-zinc-50 min-h-screen">
+        <div className="bg-paper-100 min-h-screen">
             <Navbar />
             <div className="max-w-6xl mx-auto px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.displayName}</h1>
-                        <p className="text-gray-600 mt-1">Your projects and analyses</p>
+                        <h1 className="font-display text-3xl font-semibold text-ink-900">Welcome, {user.displayName}</h1>
+                        <p className="text-ink-600 mt-1">Your projects and analyses</p>
                     </div>
-                    <div className="flex gap-3">
-                        <button
+                    <div className="flex flex-wrap gap-3">
+                        <Button
+                            variant="primary"
                             onClick={() => setShowNewProjectModal(true)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2"
+                            className="px-6 py-3"
                         >
                             <FontAwesomeIcon icon="plus" />
                             New Project
-                        </button>
-                        <Link
+                        </Button>
+                        <Button
+                            as={Link}
                             to="/analyze"
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2"
+                            variant="secondary"
+                            className="px-6 py-3"
                         >
                             <FontAwesomeIcon icon="microphone" />
                             Quick Analyze
-                        </Link>
+                        </Button>
                     </div>
                 </div>
 
                 {/* Projects Section */}
                 {projects.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Projects</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <h2 className="font-display text-xl font-semibold text-ink-800 mb-4">Projects</h2>
+                        <motion.div 
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                             {projects.map((project) => (
-                                <Card
-                                    as={Link}
-                                    key={project.id}
-                                    to={`/project/${project.id}`}
-                                    className="block hover:border-indigo-200 p-6"
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
-                                        <FontAwesomeIcon icon="folder" className="text-indigo-500" />
-                                    </div>
-                                    {project.description && (
-                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
-                                    )}
-                                    <div className="flex items-center justify-between text-sm text-gray-500">
-                                        <span>
-                                            <FontAwesomeIcon icon="file-audio" className="mr-1" />
-                                            {project.recordingCount || 0} recording{project.recordingCount !== 1 ? 's' : ''}
-                                        </span>
-                                        {project.createdAt && (
-                                            <span>
-                                                {project.createdAt.toDate ?
-                                                    project.createdAt.toDate().toLocaleDateString() :
-                                                    'Recent'}
-                                            </span>
+                                <motion.div key={project.id} variants={itemVariants}>
+                                    <Card
+                                        as={Link}
+                                        to={`/project/${project.id}`}
+                                        className="flex flex-col hover:border-brand-200 p-6 h-full"
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <h3 className="font-display text-lg font-semibold text-ink-900">{project.name}</h3>
+                                            <FontAwesomeIcon icon="folder" className="text-brand-500" />
+                                        </div>
+                                        {project.description && (
+                                            <p className="text-sm text-ink-600 mb-4 line-clamp-2">{project.description}</p>
                                         )}
-                                    </div>
-                                </Card>
+                                        {project.scoreTrend && project.scoreTrend.length >= 2 && (
+                                            <div className="mb-4">
+                                                <Sparkline
+                                                    values={project.scoreTrend}
+                                                    tone={project.scoreTrend[project.scoreTrend.length - 1] > project.scoreTrend[0] ? 'accent' : 'brand'}
+                                                    height={28}
+                                                />
+                                            </div>
+                                        )}
+                                        {project.latestRecording && Number.isFinite(project.latestRecording.rubric_total) && Number.isFinite(project.latestRecording.rubric_max) && (
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs text-ink-500">Latest score</span>
+                                                <span
+                                                    className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${SCORE_PILL_CLASSES[
+                                                        getMetricTone('rubric', project.latestRecording.rubric_total, { max: project.latestRecording.rubric_max })
+                                                    ]}`}
+                                                >
+                                                    {project.latestRecording.rubric_total}/{project.latestRecording.rubric_max}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center justify-between text-sm text-paper-500 mt-auto">
+                                            <span>
+                                                <FontAwesomeIcon icon="file-audio" className="mr-1" />
+                                                {project.recordingCount || 0} recording{project.recordingCount !== 1 ? 's' : ''}
+                                            </span>
+                                            {project.createdAt && (
+                                                <span title={project.createdAt.toDate ? project.createdAt.toDate().toLocaleString() : undefined}>
+                                                    {project.createdAt.toDate ?
+                                                        formatRelativeDate(project.createdAt.toDate()) :
+                                                        'Recent'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </Card>
+                                </motion.div>
                             ))}
-                        </div>
+                        </motion.div>
                     </div>
                 )}
 
                 {/* Legacy Feedback Section */}
                 {feedback.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Analyses</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <h2 className="font-display text-xl font-semibold text-ink-800">Quick Analyses</h2>
+                        <p className="text-sm text-paper-500 mt-1 mb-4">One-off analyses not attached to a project.</p>
+                        <motion.div 
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                             {feedback.map((fb) => (
-                                <RecordingCard
-                                    key={fb.id}
-                                    recording={fb}
-                                    as="button"
-                                    onClick={() => setSelected(fb)}
-                                    className="bg-gradient-to-br from-white to-indigo-50/30"
-                                />
+                                <motion.div key={fb.id} variants={itemVariants}>
+                                    <RecordingCard
+                                        recording={fb}
+                                        as="button"
+                                        onClick={() => setSelected(fb)}
+                                        className="bg-gradient-to-br from-white to-brand-50/30 w-full text-left"
+                                    />
+                                </motion.div>
                             ))}
-
-                            {projects.length === 0 && feedback.length === 0 ? (
-                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-12 shadow-sm text-center">
-                                    <div className="text-indigo-500 text-6xl mb-4">
-                                        <FontAwesomeIcon icon="chart-line" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-800 mb-2">Get Started</h3>
-                                    <p className="text-gray-600 mb-6">Create a project to organize your speech recordings, or do a quick analysis.</p>
-                                    <div className="flex gap-3 justify-center">
-                                        <button
-                                            onClick={() => setShowNewProjectModal(true)}
-                                            className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full font-medium hover:bg-indigo-700 transition shadow-md"
-                                        >
-                                            <FontAwesomeIcon icon="folder-plus" className="mr-2" />
-                                            Create Project
-                                        </button>
-                                        <Link
-                                            to="/analyze"
-                                            className="inline-block bg-purple-600 text-white px-6 py-3 rounded-full font-medium hover:bg-purple-700 transition shadow-md"
-                                        >
-                                            <FontAwesomeIcon icon="microphone" className="mr-2" />
-                                            Quick Analyze
-                                        </Link>
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
-                        {/* New Project Modal */}
-                        {showNewProjectModal && (
-                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowNewProjectModal(false)}>
-                                <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-                                        onClick={() => setShowNewProjectModal(false)}
-                                    >
-                                        <FontAwesomeIcon icon="times" />
-                                    </button>
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Project</h2>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Project Name <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={newProjectName}
-                                                onChange={(e) => setNewProjectName(e.target.value)}
-                                                placeholder="e.g., FBLA State Finals"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Description (Optional)
-                                            </label>
-                                            <textarea
-                                                value={newProjectDescription}
-                                                onChange={(e) => setNewProjectDescription(e.target.value)}
-                                                placeholder="Brief description of this project..."
-                                                rows="3"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Scenario <span className="text-gray-500 font-normal">(Optional)</span>
-                                            </label>
-                                            <select
-                                                value={newProjectRubricPreset}
-                                                onChange={(e) => setNewProjectRubricPreset(e.target.value)}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            >
-                                                {Object.keys(RUBRIC_PRESETS).map((key) => (
-                                                    <option key={key} value={key}>
-                                                        {key}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                This will auto-fill the evaluation rubric for recordings in this project.
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <button
-                                                onClick={handleCreateProject}
-                                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition"
-                                            >
-                                                Create Project
-                                            </button>
-                                            <button
-                                                onClick={() => setShowNewProjectModal(false)}
-                                                className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl font-semibold transition"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {selected && (
-                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-                                <div className="relative w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                        aria-label="Close"
-                                        className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
-                                        onClick={() => setSelected(null)}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                    <div className="overflow-y-auto max-h-[90vh]">
-                                        <ResultPanel result={selected} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        </motion.div>
                     </div>
                 )}
+                {projects.length === 0 && feedback.length === 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                    >
+                        <EmptyState
+                            icon="chart-line"
+                            title="Get Started"
+                            description="Create a project to organize your speech recordings, or do a quick analysis."
+                            className="max-w-2xl mx-auto my-12"
+                        >
+                            <Button
+                                variant="primary"
+                                onClick={() => setShowNewProjectModal(true)}
+                                className="px-6 py-3 rounded-full shadow-md"
+                            >
+                                <FontAwesomeIcon icon="folder-plus" />
+                                Create Project
+                            </Button>
+                            <Button
+                                as={Link}
+                                to="/analyze"
+                                variant="secondary"
+                                className="px-6 py-3 rounded-full shadow-md"
+                            >
+                                <FontAwesomeIcon icon="microphone" />
+                                Quick Analyze
+                            </Button>
+                        </EmptyState>
+                    </motion.div>
+                )}
+
+                {/* New Project Modal */}
+                <Modal
+                    isOpen={showNewProjectModal}
+                    onClose={closeNewProjectModal}
+                    className="relative w-full max-w-md p-6"
+                    labelledBy="new-project-heading"
+                >
+                    <h2 id="new-project-heading" className="font-display text-2xl font-semibold text-ink-900 mb-4">Create New Project</h2>
+                    {formError && (
+                        <p className="text-needs-work-600 text-sm mb-4">{formError}</p>
+                    )}
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="new-project-name" className="block text-sm font-semibold text-ink-700 mb-2">
+                                Project Name <span className="text-needs-work-500">*</span>
+                            </label>
+                            <input
+                                id="new-project-name"
+                                type="text"
+                                value={newProjectName}
+                                onChange={(e) => {
+                                    setNewProjectName(e.target.value);
+                                    if (formError) setFormError(null);
+                                }}
+                                placeholder="e.g., FBLA State Finals"
+                                className="w-full px-4 py-2 border border-paper-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                autoFocus
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="new-project-description" className="block text-sm font-semibold text-ink-700 mb-2">
+                                Description (Optional)
+                            </label>
+                            <textarea
+                                id="new-project-description"
+                                value={newProjectDescription}
+                                onChange={(e) => setNewProjectDescription(e.target.value)}
+                                placeholder="Brief description of this project..."
+                                rows="3"
+                                className="w-full px-4 py-2 border border-paper-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="new-project-scenario" className="block text-sm font-semibold text-ink-700 mb-2">
+                                Scenario <span className="text-paper-500 font-normal">(Optional)</span>
+                            </label>
+                            <select
+                                id="new-project-scenario"
+                                value={newProjectRubricPreset}
+                                onChange={(e) => setNewProjectRubricPreset(e.target.value)}
+                                className="w-full px-4 py-2 border border-paper-400 rounded-xl bg-white text-ink-700 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            >
+                                {Object.keys(RUBRIC_PRESETS).map((key) => (
+                                    <option key={key} value={key}>
+                                        {key}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-paper-500 mt-1">
+                                This will auto-fill the evaluation rubric for recordings in this project.
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <Button
+                                variant="primary"
+                                onClick={handleCreateProject}
+                                className="flex-1 px-6 py-3"
+                            >
+                                Create Project
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={closeNewProjectModal}
+                                className="px-6 py-3"
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                    {/* Rendered last so Modal's initial-focus lands on the Project Name
+                        input rather than on the close affordance. */}
+                    <button
+                        className="absolute top-4 right-4 text-paper-500 hover:text-ink-700"
+                        aria-label="Close"
+                        onClick={closeNewProjectModal}
+                    >
+                        <FontAwesomeIcon icon="times" />
+                    </button>
+                </Modal>
+
+                <Modal
+                    isOpen={!!selected}
+                    onClose={() => setSelected(null)}
+                    className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden"
+                >
+                    <button
+                        aria-label="Close"
+                        className="absolute top-4 right-4 z-10 text-paper-500 hover:text-ink-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
+                        onClick={() => setSelected(null)}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <div className="overflow-y-auto max-h-[90vh]">
+                        {selected && <ResultPanel result={selected} />}
+                    </div>
+                </Modal>
             </div>
         </div>
     );

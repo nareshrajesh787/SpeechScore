@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+import Button from './ui/Button';
+import Card from './ui/Card';
+
 export default function StudioMode({ onRecordingComplete, onCancel }) {
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
@@ -179,77 +182,84 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
 
     if (audioBlob && audioUrl) {
         return (
-            <div className="bg-white rounded-2xl p-8 border border-indigo-100 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">
-                    <FontAwesomeIcon icon="microphone" className="text-indigo-600 mr-2" />
+            <Card padding="p-8" className="border-brand-100">
+                <h3 className="text-xl font-bold text-ink-800 mb-4">
+                    <FontAwesomeIcon icon="microphone" className="text-brand-600 mr-2" />
                     Recording Complete
                 </h3>
                 <div className="mb-4">
                     <audio src={audioUrl} controls className="w-full" />
                 </div>
                 <div className="flex gap-3">
-                    <button
+                    <Button
+                        variant="primary"
                         onClick={handleUseRecording}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+                        className="flex-1 px-6 py-3"
                     >
-                        <FontAwesomeIcon icon="check" className="mr-2" />
+                        <FontAwesomeIcon icon="check" />
                         Use This Recording
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="secondary"
                         onClick={handleRetry}
-                        className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl font-semibold transition"
+                        className="px-6 py-3"
                     >
-                        <FontAwesomeIcon icon="redo" className="mr-2" />
+                        <FontAwesomeIcon icon="redo" />
                         Retry
-                    </button>
+                    </Button>
                     {onCancel && (
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={onCancel}
-                            className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl font-semibold transition"
+                            className="px-6 py-3"
                         >
                             Cancel
-                        </button>
+                        </Button>
                     )}
                 </div>
-            </div>
+            </Card>
         );
     }
 
     return (
-        <div className="bg-white rounded-2xl p-8 border border-indigo-100 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-                <FontAwesomeIcon icon="microphone" className="text-indigo-600 mr-2" />
+        <Card padding="p-8" className="border-brand-100">
+            <h3 className="text-xl font-bold text-ink-800 mb-4">
+                <FontAwesomeIcon icon="microphone" className="text-brand-600 mr-2" />
                 Studio Mode Recording
             </h3>
 
             {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-800 border border-red-100 rounded-lg">
+                <div className="mb-4 p-3 bg-needs-work-50 text-needs-work-700 border border-needs-work-100 rounded-lg">
                     {error}
                 </div>
             )}
 
             {!isRecording ? (
                 <div className="text-center">
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-ink-600 mb-6">
                         Record your speech directly in the browser. Click start when ready.
                     </p>
-                    <button
+                    {/* `mx-auto w-fit` keeps this centered: Button's base styles make it a
+                        flex container, which would otherwise stretch to the full width of
+                        the `text-center` wrapper instead of hugging its label. */}
+                    <Button
+                        variant="primary"
                         onClick={startRecording}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition shadow-md"
+                        className="mx-auto w-fit px-8 py-4 text-lg shadow-md"
                     >
-                        <FontAwesomeIcon icon="circle" className="mr-2" />
+                        <FontAwesomeIcon icon="circle" />
                         Start Recording
-                    </button>
+                    </Button>
                 </div>
             ) : (
                 <div>
                     <div className="mb-6">
                         <div className="flex items-center justify-center mb-4">
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-indigo-600 mb-2">
+                                <div className="text-4xl font-bold text-brand-600 mb-2">
                                     {formatTime(recordingTime)}
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-sm text-paper-500">
                                     {isPaused ? 'Paused' : 'Recording...'}
                                 </div>
                             </div>
@@ -258,46 +268,50 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
                             ref={canvasRef}
                             width={600}
                             height={150}
-                            className="w-full h-32 bg-zinc-50 rounded-xl border border-indigo-100"
+                            className="w-full h-32 bg-paper-100 rounded-xl border border-brand-100"
                         />
                     </div>
 
                     <div className="flex gap-3 justify-center">
                         {isPaused ? (
-                            <button
+                            <Button
+                                variant="primary"
                                 onClick={resumeRecording}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+                                className="px-6 py-3"
                             >
                                 <FontAwesomeIcon icon="play" className="mr-2" />
                                 Resume
-                            </button>
+                            </Button>
                         ) : (
-                            <button
+                            <Button
+                                variant="warning"
                                 onClick={pauseRecording}
-                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-semibold transition"
+                                className="px-6 py-3"
                             >
                                 <FontAwesomeIcon icon="pause" className="mr-2" />
                                 Pause
-                            </button>
+                            </Button>
                         )}
-                        <button
+                        <Button
+                            variant="danger"
                             onClick={stopRecording}
-                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+                            className="px-6 py-3"
                         >
                             <FontAwesomeIcon icon="stop" className="mr-2" />
                             Stop
-                        </button>
+                        </Button>
                         {onCancel && (
-                            <button
+                            <Button
+                                variant="secondary"
                                 onClick={onCancel}
-                                className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl font-semibold transition"
+                                className="px-6 py-3"
                             >
                                 Cancel
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
             )}
-        </div>
+        </Card>
     );
 }

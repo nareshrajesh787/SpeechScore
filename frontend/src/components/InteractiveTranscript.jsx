@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+import Button from './ui/Button';
 
 export default function InteractiveTranscript({ 
     transcript, 
@@ -65,13 +67,20 @@ export default function InteractiveTranscript({
 
     const handleWordClick = (wordIndex) => {
         if (!wordTimestamps || !audioRef.current) return;
-        
+
         const word = wordTimestamps[wordIndex];
         if (word) {
             audioRef.current.currentTime = word.start / 1000; // Convert ms to seconds
             if (!isPlaying) {
                 audioRef.current.play();
             }
+        }
+    };
+
+    const handleWordKeyDown = (e, wordIndex) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleWordClick(wordIndex);
         }
     };
 
@@ -121,22 +130,40 @@ export default function InteractiveTranscript({
                     wordCount = 2;
                 }
 
+                // The playing-word indicator (ring + scale) layers on top of the
+                // filler treatment rather than overriding it, so a word that is
+                // both a filler and the currently-playing word stays readable as
+                // "marked with a highlighter" while still showing it's playing.
+                const highlightedClasses = isHighlighted
+                    ? `inline-block scale-105 ${isFiller || isPair ? 'ring-2 ring-brand-400' : 'bg-brand-200'}`
+                    : '';
+                const fillerClasses = isFiller || isPair
+                    ? 'px-0.5 bg-highlighter text-ink-800 hover:bg-highlighter-strong'
+                    : 'text-ink-700 hover:bg-brand-50';
+
                 const className = `
-                    inline-block px-1 mx-0.5 rounded transition-all cursor-pointer
-                    ${isHighlighted ? 'bg-indigo-200 scale-105' : ''}
-                    ${isFiller || isPair ? 'text-red-600 bg-red-50 border-b-2 border-red-200 hover:bg-red-100' : 'text-gray-700 hover:bg-indigo-50'}
+                    rounded transition-all cursor-pointer
+                    focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1
+                    ${highlightedClasses}
+                    ${fillerClasses}
                 `.trim();
 
                 return (
-                    <span
-                        key={index}
-                        id={`word-${index}`}
-                        className={className}
-                        onClick={() => handleWordClick(index)}
-                        title={`Click to play from "${displayText}" (${(word.start / 1000).toFixed(2)}s)`}
-                    >
-                        {displayText}
-                    </span>
+                    <Fragment key={index}>
+                        <span
+                            id={`word-${index}`}
+                            className={className}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleWordClick(index)}
+                            onKeyDown={(e) => handleWordKeyDown(e, index)}
+                            title={`Click to play from "${displayText}" (${(word.start / 1000).toFixed(2)}s)`}
+                            aria-label={`Play from "${displayText}" at ${(word.start / 1000).toFixed(2)} seconds`}
+                        >
+                            {displayText}
+                        </span>
+                        {' '}
+                    </Fragment>
                 );
             }).filter(Boolean);
         } else {
@@ -157,14 +184,14 @@ export default function InteractiveTranscript({
                 if (isPair) {
                     return (
                         <span key={index}>
-                            <span className="text-red-600 bg-red-50 border-b-2 border-red-200 rounded-md px-1 cursor-pointer hover:bg-red-100">
+                            <span className="bg-highlighter text-ink-800 rounded-md px-1 cursor-pointer hover:bg-highlighter-strong">
                                 {word} {nextWord}
                             </span>{' '}
                         </span>
                     );
                 } else if (isFiller) {
                     return (
-                        <span key={index} className="text-red-600 bg-red-50 border-b-2 border-red-200 rounded-md px-1 cursor-pointer hover:bg-red-100">
+                        <span key={index} className="bg-highlighter text-ink-800 rounded-md px-1 cursor-pointer hover:bg-highlighter-strong">
                             {word}{' '}
                         </span>
                     );
@@ -176,23 +203,20 @@ export default function InteractiveTranscript({
     };
 
     return (
-        <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-gradient-to-br from-white to-paper-50 p-6 rounded-xl border border-paper-300 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-lg text-gray-800">
-                    <FontAwesomeIcon icon="file-audio" className="text-indigo-600 mr-2" />
+                <h2 className="font-bold text-lg text-ink-800">
+                    <FontAwesomeIcon icon="file-audio" className="text-brand-600 mr-2" />
                     Interactive Transcript
                 </h2>
                 {audioUrl && (
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={togglePlayPause}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-semibold transition flex items-center gap-2"
-                        >
+                        <Button variant="primary" onClick={togglePlayPause}>
                             <FontAwesomeIcon icon={isPlaying ? 'pause' : 'play'} />
                             {isPlaying ? 'Pause' : 'Play'}
-                        </button>
+                        </Button>
                         {audioDuration && (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-paper-500">
                                 {Math.floor(currentTime / 1000)}s / {Math.floor(audioDuration)}s
                             </span>
                         )}
@@ -210,17 +234,17 @@ export default function InteractiveTranscript({
 
             <div 
                 ref={transcriptRef}
-                className="text-base text-gray-600 leading-loose p-4 bg-white rounded-lg border border-gray-100 max-h-96 overflow-y-auto"
+                className="text-base text-ink-600 leading-loose p-4 bg-white rounded-lg border border-paper-200 max-h-96 overflow-y-auto"
             >
                 {renderTranscript()}
             </div>
 
-            <div className="mt-4 text-xs text-gray-500">
+            <div className="mt-4 text-xs text-paper-500">
                 <FontAwesomeIcon icon="info-circle" className="mr-1" />
                 {audioUrl ? (
-                    <>Click any word to jump to that moment in the audio. Filler words are highlighted in red.</>
+                    <>Click any word to jump to that moment in the audio. Filler words are highlighted for you to work on.</>
                 ) : (
-                    <>Filler words are highlighted in red. Audio playback is not available for this recording.</>
+                    <>Filler words are highlighted for you to work on. Audio playback is not available for this recording.</>
                 )}
             </div>
         </div>

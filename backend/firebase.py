@@ -1,5 +1,5 @@
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, firestore
 from fastapi import Header, HTTPException
 import os
 import json
@@ -35,7 +35,7 @@ if cred is None:
             "Set FIREBASE_CREDENTIALS_FILE environment variable pointing to your credentials JSON file.\n"
             "Example: export FIREBASE_CREDENTIALS_FILE=/path/to/your-credentials.json\n\n"
             "To convert a credentials file to JSON string for Railway:\n"
-            "python backend/convert_firebase_creds.py <path-to-credentials-file>\n\n"
+            "python backend/scripts/convert_firebase_creds.py <path-to-credentials-file>\n\n"
             f"Current FIREBASE_CREDENTIALS_JSON status: {'empty or not set' if not firebase_creds_json else 'set but invalid JSON'}"
         )
         raise ValueError(error_msg)
@@ -54,6 +54,8 @@ if cred is None:
 # Only initialize if not already initialized
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 async def get_current_user(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):

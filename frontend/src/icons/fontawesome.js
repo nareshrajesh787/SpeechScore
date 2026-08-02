@@ -4,19 +4,22 @@ import {
     faMicrophone,
     faBolt,
     faArrowRight,
+    faArrowUp,
+    faArrowDown,
+    faFeatherPointed,
     faRotateRight,
     faFileAudio,
     faGauge,
     faWandMagicSparkles,
     faStar,
     faCommentDots,
+    faCommentSlash,
     faClipboardList,
     faCircleCheck,
     faTriangleExclamation,
     faChartSimple,
     faChartLine,
     faUserCircle,
-    faFilter,
     faInfoCircle,
     faCheck,
     faPause,
@@ -31,12 +34,16 @@ import {
     faArrowLeft,
     faList,
     faMicrophoneSlash,
-    faTrash
+    faCircleExclamation,
+    faLock,
+    faChalkboardUser,
+    faPaperPlane,
+    faRobot,
+    faFileLines
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
-    faClock as farClock,
-    faFloppyDisk as farFloppyDisk
+    faClock as farClock
 } from '@fortawesome/free-regular-svg-icons';
 
 library.add(
@@ -44,21 +51,23 @@ library.add(
     faCloudArrowUp,
     faBolt,
     faArrowRight,
+    faArrowUp,
+    faArrowDown,
+    faFeatherPointed,
     farClock,
-    farFloppyDisk,
     faRotateRight,
     faFileAudio,
     faGauge,
     faWandMagicSparkles,
     faStar,
     faCommentDots,
+    faCommentSlash,
     faClipboardList,
     faCircleCheck,
     faTriangleExclamation,
     faChartSimple,
     faChartLine,
     faUserCircle,
-    faFilter,
     faInfoCircle,
     faCheck,
     faPause,
@@ -73,5 +82,10 @@ library.add(
     faArrowLeft,
     faList,
     faMicrophoneSlash,
-    faTrash
+    faCircleExclamation,
+    faLock,
+    faChalkboardUser,
+    faPaperPlane,
+    faRobot,
+    faFileLines
 );

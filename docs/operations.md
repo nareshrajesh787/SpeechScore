@@ -47,7 +47,7 @@ These must be set in Railway or `.env` for local development.
 #### Setting up Backend Credentials
 1.  **Local Dev**: Point `FIREBASE_CREDENTIALS_FILE` to your downloaded JSON key.
 2.  **Production (Railway)**: Flatten the JSON key into a single string line and set it as `FIREBASE_CREDENTIALS_JSON`.
-    *   Helper script: `python backend/convert_firebase_creds.py path/to/key.json`
+    *   Helper script: `python backend/scripts/convert_firebase_creds.py path/to/key.json`
 
 ## 3. Production Checklist
 

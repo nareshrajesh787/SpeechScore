@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/projects/{projectId} {
+      // Ownership is already fully proven by the userId path segment. A
+      // resource.data.uid check here (in addition to the path check) makes
+      // Firestore reject unfiltered list queries and count() aggregations
+      // outright, since it can't prove per-document safety for those without
+      // a matching where() clause — which is what Dashboard.jsx's project
+      // list and per-project recording count queries do.
+      allow read, create, update, delete: if request.auth != null
+        && userId == request.auth.uid;
+    }
+
+    match /users/{userId}/projects/{projectId}/recordings/{recordingId} {
+      allow read, create, update, delete: if request.auth != null
+        && userId == request.auth.uid;
+    }
+
+    match /feedback/{recordingId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+    }
+  }
+}

@@ -2,6 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { API_URL } from "../config";
+import { auth } from "../firebase";
+import Button from "./ui/Button";
+
+const STARTER_PROMPTS = [
+    "How's my introduction?",
+    "Am I speaking too fast?",
+    "What should I improve most?",
+    "How do I sound more confident?",
+];
 
 export default function CoachChat({ transcript, rubricFeedback }) {
     const [messages, setMessages] = useState([]);
@@ -17,10 +26,15 @@ export default function CoachChat({ transcript, rubricFeedback }) {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+    // Accepts an explicit question string (used by starter-prompt chips) so
+    // callers aren't forced to rely on the `input` state, which — due to
+    // React's state batching — would still hold the OLD value if a chip's
+    // onClick did `setInput(chipText)` followed immediately by `handleSend()`.
+    const handleSend = async (explicitQuestion) => {
+        const question = (typeof explicitQuestion === "string" ? explicitQuestion : input).trim();
+        if (!question || isLoading) return;
 
-        const userMsg = { role: "user", content: input };
+        const userMsg = { role: "user", content: question };
         setMessages((prev) => [...prev, userMsg]);
         setInput("");
         setIsLoading(true);
@@ -41,10 +55,13 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                 ? rubricFeedback
                 : JSON.stringify(rubricFeedback);
 
+            const token = await auth.currentUser.getIdToken(true);
+
             const response = await fetch(`${API_URL}/api/coach/chat`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     transcript: transcript,
@@ -84,17 +101,30 @@ export default function CoachChat({ transcript, rubricFeedback }) {
     };
 
     return (
-        <div className="flex flex-col h-[500px] bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="flex flex-col h-[500px] bg-white rounded-xl border border-paper-300 overflow-hidden shadow-sm">
             {/* Header / Intro */}
             {messages.length === 0 && (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-500">
-                    <div className="bg-indigo-50 p-4 rounded-full mb-4">
-                        <FontAwesomeIcon icon="chalkboard-user" className="text-3xl text-indigo-600" />
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-paper-500">
+                    <div className="bg-brand-50 p-4 rounded-full mb-4">
+                        <FontAwesomeIcon icon="chalkboard-user" className="text-3xl text-brand-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Ask the Coach</h3>
+                    <h3 className="text-lg font-semibold text-ink-700 mb-2">Ask the Coach</h3>
                     <p className="max-w-xs">
                         I've analyzed your speech. Ask me specifically about your intro, pacing, or how to improve specific sections!
                     </p>
+                    <div className="flex flex-wrap gap-2 justify-center mt-4 max-w-sm">
+                        {STARTER_PROMPTS.map((prompt) => (
+                            <button
+                                key={prompt}
+                                type="button"
+                                onClick={() => handleSend(prompt)}
+                                disabled={isLoading}
+                                className="rounded-full px-3 py-1.5 text-xs sm:text-sm bg-brand-50 text-brand-700 border border-brand-100 hover:bg-brand-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-50 transition-colors"
+                            >
+                                {prompt}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -108,12 +138,12 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                         >
                             <div
                                 className={`max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${msg.role === "user"
-                                    ? "bg-indigo-600 text-white rounded-br-none"
-                                    : "bg-white text-gray-700 border border-gray-100 rounded-bl-none"
+                                    ? "bg-brand-600 text-white rounded-br-none"
+                                    : "bg-white text-ink-700 border border-paper-200 rounded-bl-none"
                                     }`}
                             >
                                 {msg.role === "assistant" && (
-                                    <div className="flex items-center gap-2 mb-1 text-xs font-bold text-indigo-500 uppercase tracking-wide">
+                                    <div className="flex items-center gap-2 mb-1 text-xs font-bold text-brand-500 uppercase tracking-wide">
                                         <FontAwesomeIcon icon="robot" /> Coach
                                     </div>
                                 )}
@@ -123,11 +153,11 @@ export default function CoachChat({ transcript, rubricFeedback }) {
                     ))}
                     {isLoading && (
                         <div className="flex justify-start">
-                            <div className="bg-white text-gray-500 border border-gray-100 rounded-2xl rounded-bl-none p-4 shadow-sm flex items-center gap-2">
+                            <div className="bg-white text-paper-500 border border-paper-200 rounded-2xl rounded-bl-none p-4 shadow-sm flex items-center gap-2">
                                 <div className="flex space-x-1">
-                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                    <div className="w-2 h-2 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-2 h-2 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-2 h-2 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                                 </div>
                             </div>
                         </div>
@@ -137,27 +167,27 @@ export default function CoachChat({ transcript, rubricFeedback }) {
             )}
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-gray-100">
+            <div className="p-4 bg-white border-t border-paper-200">
                 <div className="flex gap-2 relative">
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Ask a question about your speech..."
-                        className="w-full resize-none rounded-xl border border-gray-300 py-3 pl-4 pr-12 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-sm text-gray-700 max-h-24 min-h-[50px]"
+                        className="w-full resize-none rounded-xl border border-paper-400 py-3 pl-4 pr-12 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none text-sm text-ink-700 max-h-24 min-h-[50px]"
                         rows={1}
                         disabled={isLoading}
                     />
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleSend}
                         disabled={!input.trim() || isLoading}
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${!input.trim() || isLoading
-                            ? "text-gray-300"
-                            : "text-indigo-600 hover:bg-indigo-50"
-                            }`}
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                        aria-label="Send message"
                     >
                         <FontAwesomeIcon icon="paper-plane" />
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

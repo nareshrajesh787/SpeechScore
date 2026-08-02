@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { db } from '../firebase';
-import { addDoc, collection, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { addDoc, collection, Timestamp, doc, getDoc, getDocs, query, orderBy, limit, setDoc, onSnapshot } from 'firebase/firestore';
 import { uploadAudioToStorage } from '../utils/audioStorage';
 import { RUBRIC_PRESETS } from '../utils/rubrics';
 import ResultPanel from './ResultPanel';
 import Navbar from './Navbar';
-import AuthButton from './AuthButton.jsx';
 import StudioMode from './StudioMode';
+import AnalyzerForm from './AnalyzerForm';
+import SignInGate from './ui/SignInGate';
+import Spinner from './ui/Spinner';
+import Tabs from './ui/Tabs';
 import { Link } from 'react-router-dom';
 
 import { API_URL } from '../config';
@@ -22,6 +25,7 @@ export default function SpeechAnalyzerPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
     const [result, setResult] = useState(null);
+    const [previousRecording, setPreviousRecording] = useState(null);
     const [audioBlob, setAudioBlob] = useState(null); // Store audio Blob for upload
     const [user, loadingAuth] = useAuthState(auth);
     const [mode, setMode] = useState('upload'); // 'upload' or 'studio'
@@ -30,7 +34,23 @@ export default function SpeechAnalyzerPage() {
     const [presetName, setPresetName] = useState(null);
     const [selectedScenario, setSelectedScenario] = useState('General Speaking');
     const [error, setError] = useState(null);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const navigate = useNavigate();
+
+    const timeoutRef = useRef(null);
+    const intervalRef = useRef(null);
+    const unsubscribeRef = useRef(null);
+
+    // Analysis can be a background task that outlives a page navigation, so
+    // make sure the timer/interval/listener from an in-flight run don't leak
+    // if the user navigates away mid-analysis.
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (unsubscribeRef.current) unsubscribeRef.current();
+        };
+    }, []);
 
     useEffect(() => {
         const pid = searchParams.get('projectId');
@@ -93,80 +113,14 @@ export default function SpeechAnalyzerPage() {
     };
 
     if (loadingAuth) {
-        return (
-            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading...</p>
-                </div>
-            </div>
-        );
+        return <Spinner size="lg" label="Loading..." fullScreen />;
     }
 
     if (!user) {
-        return (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col gap-4 items-center max-w-md w-full">
-                    <FontAwesomeIcon icon="user-circle" className="text-indigo-400 text-6xl mb-2" />
-                    <h2 className="font-bold text-2xl text-gray-800 text-center mb-1">Sign in Required</h2>
-                    <p className="text-gray-500 text-center mb-3">Sign in with Google to access your speech analysis and feedback features.</p>
-                    <div className="flex flex-col items-center w-full gap-2">
-                        <AuthButton />
-                    </div>
-                </div>
-            </div>
-        );
+        return <SignInGate message="Sign in with Google to access your speech analysis and feedback features." />;
     }
 
-    const saveFeedback = async (resultWithAudioUrl) => {
-        const user = auth.currentUser;
-        if (!user) return;
 
-        try {
-            // If audioUrl is not yet set but we have audioBlob, upload it first
-            let finalResult = { ...resultWithAudioUrl };
-            if (!finalResult.audioUrl && audioBlob) {
-                try {
-                    // Generate a temporary ID for the upload
-                    const tempRecordingId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    const audioUrl = await uploadAudioToStorage(
-                        audioBlob,
-                        user.uid,
-                        projectId || null,
-                        tempRecordingId
-                    );
-                    finalResult.audioUrl = audioUrl;
-                } catch (uploadError) {
-                    console.error('Error uploading audio during save:', uploadError);
-                    // Continue without audioUrl
-                }
-            }
-
-            let recordingRef;
-            if (projectId) {
-                // Save to project/recordings structure
-                recordingRef = await addDoc(collection(db, `users/${user.uid}/projects/${projectId}/recordings`), {
-                    ...finalResult,
-                    createdAt: Timestamp.now(),
-                });
-            } else {
-                // Fallback to old structure for backward compatibility
-                recordingRef = await addDoc(collection(db, 'feedback'), {
-                    uid: user.uid,
-                    ...finalResult,
-                    timestamp: Timestamp.now(),
-                });
-            }
-
-            // Update the result with the recording ID if needed
-            // (The audio was already uploaded with a generated ID, which is fine)
-
-            return true;
-        } catch (error) {
-            console.error('Error saving feedback:', error);
-            return false;
-        }
-    };
 
     const handleStudioRecording = (file) => {
         setAudioFile(file);
@@ -177,31 +131,103 @@ export default function SpeechAnalyzerPage() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (audioFile) {
+            // Clear any leftover timers/listener from a prior run before starting a new one.
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+
             setIsLoading(true);
             setError(null);
+            setElapsedSeconds(0);
+            setIsUploadingAudio(true);
 
             try {
-                // Store audio Blob for later upload to Firebase Storage
-                const audioBlobToUpload = audioFile instanceof File ? audioFile : audioFile;
-                setAudioBlob(audioBlobToUpload);
-
-                const formData = new FormData();
-                formData.append('audio_file', audioFile);
-                formData.append('prompt', prompt);
-                formData.append('rubric', rubric);
                 if (!auth.currentUser) {
-                    setIsLoading(false)
+                    setIsLoading(false);
+                    setIsUploadingAudio(false);
                     setError("You must be logged in to analyze speech.");
                     return;
                 }
+
+                // 1. Upload audio to Firebase Storage FIRST
+                const audioBlobToUpload = audioFile;
+                setAudioBlob(audioBlobToUpload);
+
+                let audioUrl = null;
+                const tempRecordingId = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+                try {
+                    audioUrl = await uploadAudioToStorage(
+                        audioBlobToUpload,
+                        auth.currentUser.uid,
+                        projectId || null,
+                        tempRecordingId
+                    );
+                } catch (uploadError) {
+                    console.error('Error uploading audio to storage:', uploadError);
+                    throw new Error("Failed to upload audio to cloud storage.");
+                }
+                setIsUploadingAudio(false); // Done uploading
+
+                // Look up the most recent existing draft in this project, if
+                // any, BEFORE writing the new recording doc below -- at this
+                // point the new doc doesn't exist yet, so "most recent" here
+                // is genuinely the previous draft, not the one we're about to
+                // create. Used to show a delta vs. this draft once results
+                // arrive. Quick Analyses (no projectId) have no prior draft
+                // to compare against by design.
+                let fetchedPreviousRecording = null;
+                if (projectId) {
+                    try {
+                        const projectRecordingsRef = collection(db, `users/${auth.currentUser.uid}/projects/${projectId}/recordings`);
+                        const prevSnap = await getDocs(
+                            query(projectRecordingsRef, orderBy('createdAt', 'desc'), limit(1))
+                        );
+                        if (!prevSnap.empty) {
+                            fetchedPreviousRecording = prevSnap.docs[0].data();
+                        }
+                    } catch (prevError) {
+                        console.error('Error fetching previous draft:', prevError);
+                    }
+                }
+                setPreviousRecording(fetchedPreviousRecording);
+
+                // Create dummy document with status analyzing
+                let docRef;
+                const initialData = {
+                    status: 'analyzing',
+                    audioUrl: audioUrl,
+                    prompt: prompt,
+                    rubric: rubric,
+                    createdAt: Timestamp.now(),
+                    timestamp: Timestamp.now(),
+                    uid: auth.currentUser.uid,
+                };
+                
+                if (projectId) {
+                    docRef = doc(db, `users/${auth.currentUser.uid}/projects/${projectId}/recordings/${tempRecordingId}`);
+                } else {
+                    docRef = doc(db, `feedback/${tempRecordingId}`);
+                }
+                await setDoc(docRef, initialData);
+
+                // 2. Send JSON request with the URL to FastAPI backend
                 const token = await auth.currentUser.getIdToken(true);
+                const payload = {
+                    audio_url: audioUrl,
+                    prompt: prompt,
+                    rubric: rubric,
+                    recording_id: tempRecordingId,
+                    project_id: projectId || null,
+                };
 
                 const response = await fetch(`${API_URL}/api/analyze`, {
                     method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         Authorization: `Bearer ${token}`,
                     },
-                    body: formData,
+                    body: JSON.stringify(payload),
                 });
 
                 if (!response.ok) {
@@ -209,238 +235,152 @@ export default function SpeechAnalyzerPage() {
                     const msg = errData.detail || `Server error: ${response.status}`;
                     throw new Error(msg);
                 }
-                const data = await response.json()
+                
+                // 3. Setup snapshot listener for completion, with an elapsed-time
+                //    counter and a hard timeout so a stuck background task
+                //    doesn't leave the UI spinning forever.
+                intervalRef.current = setInterval(() => {
+                    setElapsedSeconds((prev) => prev + 1);
+                }, 1000);
 
-                // Upload audio to Firebase Storage after successful analysis
-                if (audioBlobToUpload && auth.currentUser) {
-                    setIsUploadingAudio(true);
-                    try {
-                        const audioUrl = await uploadAudioToStorage(
-                            audioBlobToUpload,
-                            auth.currentUser.uid,
-                            projectId || null,
-                            null // recordingId will be generated
-                        );
-                        // Add audioUrl to the result
-                        data.audioUrl = audioUrl;
-                    } catch (uploadError) {
-                        console.error('Error uploading audio to storage:', uploadError);
-                        // Don't block the user - continue without audioUrl
-                        // They can still see the analysis results
-                    } finally {
-                        setIsUploadingAudio(false);
+                const ANALYSIS_TIMEOUT_MS = 4 * 60 * 1000; // 4 minutes
+                const stopWaiting = () => {
+                    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+                    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+                };
+
+                timeoutRef.current = setTimeout(() => {
+                    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+                    stopWaiting();
+                    setError("Analysis is taking longer than expected. This can happen with longer recordings, or something may have gone wrong on our end. Please try again.");
+                    setIsLoading(false);
+                }, ANALYSIS_TIMEOUT_MS);
+
+                const unsubscribe = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.status === 'completed') {
+                            stopWaiting();
+                            setResult(data);
+                            setIsLoading(false);
+                            unsubscribe();
+                            unsubscribeRef.current = null;
+                        } else if (data.status === 'error') {
+                            stopWaiting();
+                            setError(data.error_message || "An error occurred during analysis.");
+                            setIsLoading(false);
+                            unsubscribe();
+                            unsubscribeRef.current = null;
+                        }
                     }
-                }
+                }, (err) => {
+                    stopWaiting();
+                    console.error("Firestore listener error:", err);
+                    setError("Failed to listen for analysis results.");
+                    setIsLoading(false);
+                    unsubscribeRef.current = null;
+                });
+                unsubscribeRef.current = unsubscribe;
 
-                setResult(data)
             } catch (error) {
-                console.error('Error during analysis:', error)
+                console.error('Error during analysis:', error);
                 setError(error.message || "An unexpected error occurred. Please try again.");
-            } finally {
-                setIsLoading(false)
+                setIsLoading(false);
+                setIsUploadingAudio(false);
             }
         }
     }
 
     return (
-        <div className="bg-zinc-50 min-h-screen">
+        <div className="bg-paper-100 min-h-screen">
             <Navbar />
-            <div
-                className={
-                    result
-                        ? "p-6 grid grid-cols-1 md:grid-cols-2 gap-4"
-                        : "p-6 grid grid-cols-1"
-                }
-            >
-                <div className="max-w-3xl mx-auto max-h-fit bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl p-8 mt-12 shadow-lg border border-indigo-100">
-                    <h1 className="font-bold text-4xl text-center text-gray-800">
-                        <FontAwesomeIcon
-                            className="text-indigo-600"
-                            icon={"bolt"}
-                        />{" "}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700">
-                            Analyze Your{" "}
-
-                            Speech
-                        </span>
-                    </h1>
-                    <p className="text-center font-medium text-gray-500 px-5 mt-4 mb-5">
-                        {mode === 'upload'
-                            ? 'Upload your recording or record directly in the browser. Provide your prompt and rubric for personalized AI feedback.'
-                            : 'Record your speech directly in the browser with Studio Mode. Pause, resume, and see real-time waveform visualization.'}
-                    </p>
-
-                    {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-start gap-3">
-                            <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
-                            <div>
-                                <p className="font-semibold text-sm">Analysis Failed</p>
-                                <p className="text-sm opacity-90">{error}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Mode Toggle */}
-                    <div className="flex gap-2 mb-5 p-1 bg-gray-100 rounded-xl">
-                        <button
-                            type="button"
-                            onClick={() => setMode('upload')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${mode === 'upload'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            <FontAwesomeIcon icon="cloud-arrow-up" className="mr-2" />
-                            Upload File
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMode('studio')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${mode === 'studio'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            <FontAwesomeIcon icon="microphone" className="mr-2" />
-                            Studio Mode
-                        </button>
-                    </div>
-
-                    {mode === 'studio' ? (
-                        <StudioMode
-                            onRecordingComplete={handleStudioRecording}
-                            onCancel={() => setMode('upload')}
-                        />
-                    ) : (
-                        <form onSubmit={handleSubmit}>
-                            <label
-                                htmlFor="audioFile"
-                                className="text-sm font-bold"
-                            >
-                                Audio File<span className="text-amber-500">*</span>
-                            </label>
-                            <div className="border-indigo-300 group border-2 border-dashed rounded-xl p-6 mt-2 text-gray-500 text-center hover:bg-indigo-50 cursor-pointer">
-                                <input
-                                    type="file"
-                                    id="audio-upload"
-                                    name="audioFile"
-                                    accept="audio/*"
-                                    required={!audioFile}
-                                    style={{ display: "none" }}
-                                    onChange={(e) =>
-                                        setAudioFile(e.target.files[0])
-                                    }
-                                />
-                                <label
-                                    htmlFor="audio-upload"
-                                    className="block cursor-pointer text-indigo-600 font-semibold mt-2"
-                                >
-                                    <FontAwesomeIcon
-                                        icon={"cloud-arrow-up"}
-                                        className="text-indigo-500 text-5xl mb-4 group-hover:scale-[1.2] transition-transform duration-300"
-                                    />
-                                    <p className="text-sm text-gray-700 font-medium">
-                                        {audioFile
-                                            ? audioFile.name
-                                            : "Click or drag to upload .mp3, .wav"}
-                                    </p>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Max 20MB
-                                    </p>
-                                </label>
-                            </div>
-                            <div className="mt-5">
-                                <label
-                                    htmlFor="prompt"
-                                    className="text-sm font-bold"
-                                >
-                                    Speech Prompt
-                                    <span className="text-amber-500">*</span>
-                                </label>
-                                <textarea
-                                    name="prompt"
-                                    value={prompt}
-                                    required
-                                    className="w-full mt-2 p-2 border rounded-xl bg-gray-50 font-[400]"
-                                    id="prompt"
-                                    rows="3"
-                                    placeholder="E.g. 'Describe a challenge you overcame' or paste your assignment question"
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                />
-                            </div>
-                            <div className="mt-5">
-                                {!projectId && (
-                                    <div className="mb-3">
-                                        <label className="block text-sm font-bold mb-2">
-                                            Scenario / Preset
-                                        </label>
-                                        <select
-                                            value={selectedScenario}
-                                            onChange={handleScenarioChange}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        >
-                                            {Object.keys(RUBRIC_PRESETS).map((key) => (
-                                                <option key={key} value={key}>
-                                                    {key}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-                                <label
-                                    htmlFor="rubric"
-                                    className="text-sm font-bold"
-                                >
-                                    Evaluation Rubric
-                                    <span className="text-amber-500">*</span>
-                                    {presetName && presetName !== 'Custom' && (
-                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                                            Using "{presetName}" preset
-                                        </span>
-                                    )}
-                                </label>
-                                <textarea
-                                    name="rubric"
-                                    value={rubric}
-                                    required
-                                    className="w-full mt-2 p-2 border rounded-xl bg-gray-50"
-                                    id="rubric"
-                                    rows="3"
-                                    placeholder="E.g. 'Content clarity, supporting evidence, engagement...' "
-                                    onChange={handleRubricChange}
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={!audioFile || isLoading || isUploadingAudio}
-                                className="mt-7 mb-2 w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-center px-6 py-2 rounded-3xl font-semibold"
-                            >
-                                {isLoading ? (
-                                    "Analyzing..."
-                                ) : isUploadingAudio ? (
-                                    "Uploading Audio..."
-                                ) : (
-                                    <>
-                                        Analyze Speech{" "}
-                                        <FontAwesomeIcon
-                                            className="mr-2"
-                                            icon="arrow-right"
-                                        />
-                                    </>
-                                )}
-                            </button>
-                        </form>
-                    )}
-                </div>
-
-                {result && (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+                {/* Once results exist they become the whole page. Previously the
+                    form and the results shared a cramped two-column grid, which
+                    gave the results half the width and left a now-irrelevant
+                    form competing for attention. "Try Another" brings it back. */}
+                {result ? (
                     <ResultPanel
                         result={result}
-                        onSave={saveFeedback}
+                        previousRecording={previousRecording}
                         onTryAgain={() => {
                             setResult(null);
                             setAudioBlob(null);
+                            setPreviousRecording(null);
                         }}
                     />
+                ) : (
+                    <>
+                        <header className="mb-8">
+                            <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink-900 tracking-tight">
+                                Analyze your speech
+                            </h1>
+                            <p className="text-ink-600 mt-3 text-lg leading-relaxed">
+                                {mode === 'upload'
+                                    ? 'Upload a recording, tell the coach what you were practicing, and get scored feedback in a couple of minutes.'
+                                    : 'Record straight from your browser. Pause, resume, and watch the waveform as you go.'}
+                            </p>
+                        </header>
+
+                        {error && (
+                            <div className="mb-6 p-4 bg-needs-work-50 border border-needs-work-200 rounded-xl text-needs-work-700 flex items-start gap-3">
+                                <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
+                                <div>
+                                    <p className="font-semibold text-sm">Analysis failed</p>
+                                    <p className="text-sm opacity-90">{error}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {isLoading && (
+                            <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl text-brand-700 flex items-start gap-3">
+                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-brand-600 mt-1 flex-shrink-0"></div>
+                                <div>
+                                    <p className="font-semibold text-sm">
+                                        {isUploadingAudio ? 'Uploading your recording…' : 'Analyzing your speech…'}
+                                    </p>
+                                    <p className="text-sm opacity-90">
+                                        {isUploadingAudio
+                                            ? 'This should only take a few seconds.'
+                                            : `This can take a minute or two for longer recordings. ${elapsedSeconds}s elapsed.`}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <Tabs
+                            tabs={[
+                                { id: 'upload', label: 'Upload a file', icon: 'cloud-arrow-up' },
+                                { id: 'studio', label: 'Record here', icon: 'microphone' },
+                            ]}
+                            activeTab={mode}
+                            onChange={setMode}
+                            className="mb-6"
+                        />
+
+                        {mode === 'studio' ? (
+                            <StudioMode
+                                onRecordingComplete={handleStudioRecording}
+                                onCancel={() => setMode('upload')}
+                            />
+                        ) : (
+                            <AnalyzerForm
+                                audioFile={audioFile}
+                                setAudioFile={setAudioFile}
+                                prompt={prompt}
+                                setPrompt={setPrompt}
+                                rubric={rubric}
+                                projectId={projectId}
+                                selectedScenario={selectedScenario}
+                                handleScenarioChange={handleScenarioChange}
+                                presetName={presetName}
+                                handleRubricChange={handleRubricChange}
+                                isLoading={isLoading}
+                                isUploadingAudio={isUploadingAudio}
+                                handleSubmit={handleSubmit}
+                            />
+                        )}
+                    </>
                 )}
             </div>
         </div>

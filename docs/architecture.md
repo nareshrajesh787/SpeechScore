@@ -31,12 +31,13 @@ SpeechScore is a "Competitive Career Coach" web application designed to help use
 
 ### 1. Analyze Recording Flow
 1.  **Browser**: User records audio (MediaRecorder API) or uploads a file.
-2.  **Browser → Backend**: Sends `POST /api/analyze` (FormData with audio file + auth token).
-3.  **Backend → AssemblyAI**: Uploads audio -> Polls for transcript (with word timestamps).
-4.  **Backend → Gemini**: Sends transcript + rubric prompt for qualitative analysis.
-5.  **Backend**: Calculates local metrics (WPM, filler word density).
-6.  **Backend → Browser**: Returns JSON response containing transcript, feedback, and metrics.
-7.  **Browser → Firestore**: Saves result to `users/{uid}/projects/{pid}/recordings/{rid}`.
+2.  **Browser → Firebase Storage**: Uploads audio file directly to cloud storage and gets a download URL.
+3.  **Browser → Backend**: Sends `POST /api/analyze` (JSON payload with `audio_url`, prompt, rubric, and auth token).
+4.  **Backend → AssemblyAI**: Sends URL to AssemblyAI -> Polls for transcript (with word timestamps).
+5.  **Backend → Gemini**: Sends transcript + rubric prompt for qualitative analysis.
+6.  **Backend**: Calculates local metrics (WPM, filler word density).
+7.  **Backend → Browser**: Returns JSON response containing transcript, feedback, metrics, and `audio_url`.
+8.  **Browser → Firestore**: Saves result to `users/{uid}/projects/{pid}/recordings/{rid}`.
 
 ### 2. Ask the Coach Flow
 1.  **Browser**: User types a question in the "Ask the Coach" chat UI.
