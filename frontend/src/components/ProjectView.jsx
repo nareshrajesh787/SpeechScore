@@ -124,12 +124,12 @@ export default function ProjectView() {
 
     if (!project) {
         return (
-            <div className="bg-zinc-50 min-h-screen">
+            <div className="bg-paper-100 min-h-screen">
                 <Navbar />
                 <div className="max-w-5xl mx-auto px-4 py-8">
                     <div className="bg-white rounded-2xl p-8 text-center">
-                        <p className="text-gray-600">Project not found</p>
-                        <Link to="/dashboard" className="text-indigo-600 hover:underline mt-4 inline-block">
+                        <p className="text-ink-600">Project not found</p>
+                        <Link to="/dashboard" className="text-brand-600 hover:underline mt-4 inline-block">
                             Back to Dashboard
                         </Link>
                     </div>
@@ -139,7 +139,7 @@ export default function ProjectView() {
     }
 
     return (
-        <div className="bg-zinc-50 min-h-screen">
+        <div className="bg-paper-100 min-h-screen">
             <Navbar />
             <div className="max-w-5xl mx-auto px-4 py-8">
                 {/* Project Header */}
@@ -148,14 +148,14 @@ export default function ProjectView() {
                         <div>
                             <Link
                                 to="/dashboard"
-                                className="text-indigo-600 hover:text-indigo-700 mb-2 inline-flex items-center text-sm"
+                                className="text-brand-600 hover:text-brand-700 mb-2 inline-flex items-center text-sm"
                             >
                                 <FontAwesomeIcon icon="arrow-left" className="mr-2" />
                                 Back to Dashboard
                             </Link>
-                            <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+                            <h1 className="font-display text-4xl font-semibold text-ink-900">{project.name}</h1>
                             {project.description && (
-                                <p className="text-gray-600 mt-2">{project.description}</p>
+                                <p className="text-ink-600 mt-2">{project.description}</p>
                             )}
                         </div>
                         <Button
@@ -171,7 +171,7 @@ export default function ProjectView() {
                 </div>
 
                 {deleteError && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-start gap-3">
+                    <div className="mb-6 p-4 bg-needs-work-50 border border-needs-work-200 rounded-xl text-needs-work-700 flex items-start gap-3">
                         <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
                         <p className="text-sm">{deleteError}</p>
                     </div>
@@ -239,7 +239,7 @@ export default function ProjectView() {
                             className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden"
                         >
                             <button
-                                className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
+                                className="absolute top-4 right-4 z-10 text-paper-500 hover:text-ink-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
                                 onClick={() => setSelectedRecording(null)}
                                 aria-label="Close"
                             >
@@ -257,10 +257,10 @@ export default function ProjectView() {
                             className="p-8 flex flex-col gap-4 items-center max-w-md w-full"
                             labelledBy="delete-recording-heading"
                         >
-                            <h3 id="delete-recording-heading" className="text-xl font-bold text-gray-800 text-center">
+                            <h3 id="delete-recording-heading" className="text-xl font-bold text-ink-800 text-center">
                                 Delete Recording?
                             </h3>
-                            <p className="text-gray-500 text-center">
+                            <p className="text-paper-500 text-center">
                                 Are you sure you want to delete this recording? This action cannot be undone.
                             </p>
                             <div className="flex flex-col gap-3 w-full">

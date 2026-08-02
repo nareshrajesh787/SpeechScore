@@ -48,8 +48,8 @@ export default function TrendCharts({ recordings }) {
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white rounded-xl shadow-md border border-indigo-50/50 p-4">
-                    <p className="text-sm font-semibold text-gray-800 mb-2">{label}</p>
+                <div className="bg-white rounded-xl shadow-md border border-brand-50/50 p-4">
+                    <p className="text-sm font-semibold text-ink-800 mb-2">{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} className="text-sm" style={{ color: entry.color }}>
                             {entry.name}: <span className="font-bold">{entry.value}</span>
@@ -76,11 +76,11 @@ export default function TrendCharts({ recordings }) {
             {/* WPM Chart */}
             <Card>
                 <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                        <FontAwesomeIcon icon="gauge" className="text-indigo-600" />
+                    <h3 className="text-lg font-semibold text-ink-700 flex items-center gap-2">
+                        <FontAwesomeIcon icon="gauge" className="text-brand-600" />
                         Words Per Minute (WPM)
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-paper-500 mt-1">
                         Ideal range: 130-150 WPM (highlighted in green)
                     </p>
                 </div>
@@ -135,11 +135,11 @@ export default function TrendCharts({ recordings }) {
             {/* Filler Words Chart */}
             <Card>
                 <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                        <FontAwesomeIcon icon="wand-magic-sparkles" className="text-red-500" />
+                    <h3 className="text-lg font-semibold text-ink-700 flex items-center gap-2">
+                        <FontAwesomeIcon icon="comment-slash" className="text-brand-600" />
                         Filler Words Count
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-paper-500 mt-1">
                         Total filler words per recording
                     </p>
                 </div>
@@ -169,11 +169,11 @@ export default function TrendCharts({ recordings }) {
             {/* Clarity Chart */}
             <Card>
                 <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                        <FontAwesomeIcon icon="star" className="text-indigo-600" />
+                    <h3 className="text-lg font-semibold text-ink-700 flex items-center gap-2">
+                        <FontAwesomeIcon icon="star" className="text-brand-600" />
                         Clarity Score
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-paper-500 mt-1">
                         Speech clarity score (0-10 scale)
                     </p>
                 </div>

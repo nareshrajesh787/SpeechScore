@@ -38,18 +38,18 @@ describe('StudioMode initial state', () => {
     const start = screen.getByRole('button', { name: /start recording/i });
 
     // primary variant
-    expect(start).toHaveClass('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+    expect(start).toHaveClass('bg-brand-600', 'text-white', 'hover:bg-brand-700');
     // Button base styles
     expect(start).toHaveClass('rounded-xl', 'font-semibold', 'transition-all');
     // per-instance sizing preserved through className
     expect(start).toHaveClass('px-8', 'py-4', 'text-lg', 'shadow-md');
   });
 
-  it('renders inside a Card container that keeps the indigo-100 border', () => {
+  it('renders inside a Card container that keeps the brand-100 border', () => {
     const { container } = render(<StudioMode onRecordingComplete={vi.fn()} />);
 
     const card = container.firstChild;
-    expect(card).toHaveClass('bg-white', 'rounded-2xl', 'p-8', 'border-indigo-100');
+    expect(card).toHaveClass('bg-white', 'rounded-2xl', 'p-8', 'border-brand-100');
   });
 
   it('shows only Start Recording before recording begins', () => {

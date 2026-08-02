@@ -22,17 +22,17 @@ const Spinner = ({ size = 'lg', label, fullScreen = false, className = '', ...pr
     const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.lg;
 
     const wrapperClass = fullScreen
-        ? 'bg-zinc-50 min-h-screen flex items-center justify-center'
+        ? 'bg-paper-100 min-h-screen flex items-center justify-center'
         : 'flex items-center justify-center';
 
     return (
         <div className={`${wrapperClass} ${className}`} data-testid="spinner" {...props}>
             <div className="text-center">
                 <div
-                    className={`inline-block animate-spin rounded-full ${sizeClass} border-b-2 border-indigo-600 mb-4`}
+                    className={`inline-block animate-spin rounded-full ${sizeClass} border-b-2 border-brand-600 mb-4`}
                     data-testid="spinner-icon"
                 ></div>
-                {label && <p className="text-gray-600 font-medium">{label}</p>}
+                {label && <p className="text-ink-600 font-medium">{label}</p>}
             </div>
         </div>
     );

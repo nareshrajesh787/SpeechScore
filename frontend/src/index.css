@@ -1,3 +1,20 @@
 @tailwind base;     /* Reset and base styles */
 @tailwind components;  /* Component classes */
 @tailwind utilities;   /* Utility classes */
+
+@layer base {
+    /* Warm paper canvas + ink text as the app-wide default, so individual
+       pages don't each have to restate it. */
+    body {
+        @apply bg-paper-100 text-ink-800 antialiased;
+    }
+
+    /* Fraunces carries an optical-size axis; `auto` lets the browser drive it
+       from the rendered font-size, so display numerals stay sturdy while small
+       serif captions stay legible. Tabular figures keep animated count-ups
+       from jittering as digit widths change. */
+    .font-display {
+        font-optical-sizing: auto;
+        font-variant-numeric: tabular-nums;
+    }
+}

@@ -182,9 +182,9 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
 
     if (audioBlob && audioUrl) {
         return (
-            <Card padding="p-8" className="border-indigo-100">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">
-                    <FontAwesomeIcon icon="microphone" className="text-indigo-600 mr-2" />
+            <Card padding="p-8" className="border-brand-100">
+                <h3 className="text-xl font-bold text-ink-800 mb-4">
+                    <FontAwesomeIcon icon="microphone" className="text-brand-600 mr-2" />
                     Recording Complete
                 </h3>
                 <div className="mb-4">
@@ -222,21 +222,21 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
     }
 
     return (
-        <Card padding="p-8" className="border-indigo-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-                <FontAwesomeIcon icon="microphone" className="text-indigo-600 mr-2" />
+        <Card padding="p-8" className="border-brand-100">
+            <h3 className="text-xl font-bold text-ink-800 mb-4">
+                <FontAwesomeIcon icon="microphone" className="text-brand-600 mr-2" />
                 Studio Mode Recording
             </h3>
 
             {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-800 border border-red-100 rounded-lg">
+                <div className="mb-4 p-3 bg-needs-work-50 text-needs-work-700 border border-needs-work-100 rounded-lg">
                     {error}
                 </div>
             )}
 
             {!isRecording ? (
                 <div className="text-center">
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-ink-600 mb-6">
                         Record your speech directly in the browser. Click start when ready.
                     </p>
                     {/* `mx-auto w-fit` keeps this centered: Button's base styles make it a
@@ -256,10 +256,10 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
                     <div className="mb-6">
                         <div className="flex items-center justify-center mb-4">
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-indigo-600 mb-2">
+                                <div className="text-4xl font-bold text-brand-600 mb-2">
                                     {formatTime(recordingTime)}
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-sm text-paper-500">
                                     {isPaused ? 'Paused' : 'Recording...'}
                                 </div>
                             </div>
@@ -268,7 +268,7 @@ export default function StudioMode({ onRecordingComplete, onCancel }) {
                             ref={canvasRef}
                             width={600}
                             height={150}
-                            className="w-full h-32 bg-zinc-50 rounded-xl border border-indigo-100"
+                            className="w-full h-32 bg-paper-100 rounded-xl border border-brand-100"
                         />
                     </div>
 

@@ -41,7 +41,7 @@ describe('Spinner', () => {
         render(<Spinner fullScreen label="Loading..." />);
         const wrapper = screen.getByTestId('spinner');
         expect(wrapper.className).toContain('min-h-screen');
-        expect(wrapper.className).toContain('bg-zinc-50');
+        expect(wrapper.className).toContain('bg-paper-100');
         expect(wrapper.className).toContain('flex');
         expect(wrapper.className).toContain('items-center');
         expect(wrapper.className).toContain('justify-center');

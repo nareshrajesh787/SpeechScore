@@ -42,7 +42,7 @@ describe('CoachChat send button', () => {
 
     const sendButton = screen.getByRole('button');
     expect(sendButton).toBeDisabled();
-    expect(sendButton.className).toContain('disabled:text-gray-300');
+    expect(sendButton.className).toContain('disabled:text-ink-400');
     // Icon-only sizing, not the default px-4 py-2 pill.
     expect(sendButton.className).toContain('p-2');
     expect(sendButton.className).toContain('rounded-lg');

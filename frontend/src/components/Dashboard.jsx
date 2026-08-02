@@ -124,11 +124,11 @@ export default function Dashboard() {
     }
     if (error) {
         return (
-            <div className="bg-zinc-50 min-h-screen flex items-center justify-center">
+            <div className="bg-paper-100 min-h-screen flex items-center justify-center">
                 <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
-                    <div className="text-red-500 text-4xl mb-4">⚠️</div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Error</h2>
-                    <p className="text-gray-600">{error.message}</p>
+                    <div className="text-needs-work-500 text-4xl mb-4">⚠️</div>
+                    <h2 className="text-xl font-bold text-ink-800 mb-2">Error</h2>
+                    <p className="text-ink-600">{error.message}</p>
                 </div>
             </div>
         );
@@ -139,13 +139,13 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="bg-zinc-50 min-h-screen">
+        <div className="bg-paper-100 min-h-screen">
             <Navbar />
             <div className="max-w-6xl mx-auto px-4 py-8">
                 <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.displayName}</h1>
-                        <p className="text-gray-600 mt-1">Your projects and analyses</p>
+                        <h1 className="font-display text-3xl font-semibold text-ink-900">Welcome, {user.displayName}</h1>
+                        <p className="text-ink-600 mt-1">Your projects and analyses</p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         <Button
@@ -171,7 +171,7 @@ export default function Dashboard() {
                 {/* Projects Section */}
                 {projects.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Projects</h2>
+                        <h2 className="font-display text-xl font-semibold text-ink-800 mb-4">Projects</h2>
                         <motion.div 
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             variants={containerVariants}
@@ -183,16 +183,16 @@ export default function Dashboard() {
                                     <Card
                                         as={Link}
                                         to={`/project/${project.id}`}
-                                        className="flex flex-col hover:border-indigo-200 p-6 h-full"
+                                        className="flex flex-col hover:border-brand-200 p-6 h-full"
                                     >
                                         <div className="flex items-start justify-between mb-3">
-                                            <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
-                                            <FontAwesomeIcon icon="folder" className="text-indigo-500" />
+                                            <h3 className="font-display text-lg font-semibold text-ink-900">{project.name}</h3>
+                                            <FontAwesomeIcon icon="folder" className="text-brand-500" />
                                         </div>
                                         {project.description && (
-                                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">{project.description}</p>
+                                            <p className="text-sm text-ink-600 mb-4 line-clamp-2">{project.description}</p>
                                         )}
-                                        <div className="flex items-center justify-between text-sm text-gray-500 mt-auto">
+                                        <div className="flex items-center justify-between text-sm text-paper-500 mt-auto">
                                             <span>
                                                 <FontAwesomeIcon icon="file-audio" className="mr-1" />
                                                 {project.recordingCount || 0} recording{project.recordingCount !== 1 ? 's' : ''}
@@ -215,8 +215,8 @@ export default function Dashboard() {
                 {/* Legacy Feedback Section */}
                 {feedback.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-bold text-gray-800">Quick Analyses</h2>
-                        <p className="text-sm text-gray-500 mt-1 mb-4">One-off analyses not attached to a project.</p>
+                        <h2 className="font-display text-xl font-semibold text-ink-800">Quick Analyses</h2>
+                        <p className="text-sm text-paper-500 mt-1 mb-4">One-off analyses not attached to a project.</p>
                         <motion.div 
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             variants={containerVariants}
@@ -229,7 +229,7 @@ export default function Dashboard() {
                                         recording={fb}
                                         as="button"
                                         onClick={() => setSelected(fb)}
-                                        className="bg-gradient-to-br from-white to-indigo-50/30 w-full text-left"
+                                        className="bg-gradient-to-br from-white to-brand-50/30 w-full text-left"
                                     />
                                 </motion.div>
                             ))}
@@ -276,14 +276,14 @@ export default function Dashboard() {
                     className="relative w-full max-w-md p-6"
                     labelledBy="new-project-heading"
                 >
-                    <h2 id="new-project-heading" className="text-2xl font-bold text-gray-900 mb-4">Create New Project</h2>
+                    <h2 id="new-project-heading" className="font-display text-2xl font-semibold text-ink-900 mb-4">Create New Project</h2>
                     {formError && (
-                        <p className="text-red-600 text-sm mb-4">{formError}</p>
+                        <p className="text-needs-work-600 text-sm mb-4">{formError}</p>
                     )}
                     <div className="space-y-4">
                         <div>
-                            <label htmlFor="new-project-name" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Project Name <span className="text-red-500">*</span>
+                            <label htmlFor="new-project-name" className="block text-sm font-semibold text-ink-700 mb-2">
+                                Project Name <span className="text-needs-work-500">*</span>
                             </label>
                             <input
                                 id="new-project-name"
@@ -294,12 +294,12 @@ export default function Dashboard() {
                                     if (formError) setFormError(null);
                                 }}
                                 placeholder="e.g., FBLA State Finals"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full px-4 py-2 border border-paper-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                                 autoFocus
                             />
                         </div>
                         <div>
-                            <label htmlFor="new-project-description" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="new-project-description" className="block text-sm font-semibold text-ink-700 mb-2">
                                 Description (Optional)
                             </label>
                             <textarea
@@ -308,18 +308,18 @@ export default function Dashboard() {
                                 onChange={(e) => setNewProjectDescription(e.target.value)}
                                 placeholder="Brief description of this project..."
                                 rows="3"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full px-4 py-2 border border-paper-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
                             />
                         </div>
                         <div>
-                            <label htmlFor="new-project-scenario" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Scenario <span className="text-gray-500 font-normal">(Optional)</span>
+                            <label htmlFor="new-project-scenario" className="block text-sm font-semibold text-ink-700 mb-2">
+                                Scenario <span className="text-paper-500 font-normal">(Optional)</span>
                             </label>
                             <select
                                 id="new-project-scenario"
                                 value={newProjectRubricPreset}
                                 onChange={(e) => setNewProjectRubricPreset(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full px-4 py-2 border border-paper-400 rounded-xl bg-white text-ink-700 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
                             >
                                 {Object.keys(RUBRIC_PRESETS).map((key) => (
                                     <option key={key} value={key}>
@@ -327,7 +327,7 @@ export default function Dashboard() {
                                     </option>
                                 ))}
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-paper-500 mt-1">
                                 This will auto-fill the evaluation rubric for recordings in this project.
                             </p>
                         </div>
@@ -351,7 +351,7 @@ export default function Dashboard() {
                     {/* Rendered last so Modal's initial-focus lands on the Project Name
                         input rather than on the close affordance. */}
                     <button
-                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                        className="absolute top-4 right-4 text-paper-500 hover:text-ink-700"
                         aria-label="Close"
                         onClick={closeNewProjectModal}
                     >
@@ -366,7 +366,7 @@ export default function Dashboard() {
                 >
                     <button
                         aria-label="Close"
-                        className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
+                        className="absolute top-4 right-4 z-10 text-paper-500 hover:text-ink-700 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
                         onClick={() => setSelected(null)}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

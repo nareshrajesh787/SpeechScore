@@ -10,15 +10,15 @@ describe('Card variants', () => {
     expect(card.className).toContain('bg-white');
   });
 
-  // The `surface` variant exists for content that sits on the app's own
-  // indigo gradient page backgrounds (SpeechAnalyzerPage's form, ResultPanel),
-  // where a flat bg-white previously fought the gradient instead of blending in.
+  // The `surface` variant exists for content that sits on the app's own warm
+  // paper page canvas (SpeechAnalyzerPage's form, ResultPanel), where a flat
+  // bg-white previously fought the canvas instead of settling onto it.
   it('the surface variant blends into a gradient background instead of a flat white', () => {
     render(<Card variant="surface">content</Card>);
     const card = screen.getByText('content');
     expect(card.className).toContain('bg-gradient-to-br');
     expect(card.className).toContain('from-white');
-    expect(card.className).toContain('to-indigo-50/20');
+    expect(card.className).toContain('to-paper-100');
     expect(card.className).not.toContain('bg-white');
   });
 

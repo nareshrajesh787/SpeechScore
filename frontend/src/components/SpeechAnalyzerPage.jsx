@@ -269,7 +269,7 @@ export default function SpeechAnalyzerPage() {
     }
 
     return (
-        <div className="bg-zinc-50 min-h-screen">
+        <div className="bg-paper-100 min-h-screen">
             <Navbar />
             <div
                 className={
@@ -279,24 +279,24 @@ export default function SpeechAnalyzerPage() {
                 }
             >
                 <Card variant="surface" padding="p-8" className="max-w-3xl mx-auto max-h-fit mt-12 shadow-lg">
-                    <h1 className="font-bold text-4xl text-center text-gray-800">
+                    <h1 className="font-display font-semibold text-4xl text-center text-ink-800">
                         <FontAwesomeIcon
-                            className="text-indigo-600"
+                            className="text-brand-600"
                             icon={"bolt"}
-                        />{" "}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-700">
+                        />{" "}<span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-700 to-brand-500">
                             Analyze Your{" "}
 
                             Speech
                         </span>
                     </h1>
-                    <p className="text-center font-medium text-gray-500 px-5 mt-4 mb-5">
+                    <p className="text-center font-medium text-paper-500 px-5 mt-4 mb-5">
                         {mode === 'upload'
                             ? 'Upload your recording or record directly in the browser. Provide your prompt and rubric for personalized AI feedback.'
                             : 'Record your speech directly in the browser with Studio Mode. Pause, resume, and see real-time waveform visualization.'}
                     </p>
 
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-start gap-3">
+                        <div className="mb-6 p-4 bg-needs-work-50 border border-needs-work-200 rounded-xl text-needs-work-700 flex items-start gap-3">
                             <FontAwesomeIcon icon="circle-exclamation" className="mt-1 flex-shrink-0" />
                             <div>
                                 <p className="font-semibold text-sm">Analysis Failed</p>
@@ -306,8 +306,8 @@ export default function SpeechAnalyzerPage() {
                     )}
 
                     {isLoading && (
-                        <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 flex items-start gap-3">
-                            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mt-1 flex-shrink-0"></div>
+                        <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl text-brand-700 flex items-start gap-3">
+                            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-brand-600 mt-1 flex-shrink-0"></div>
                             <div>
                                 <p className="font-semibold text-sm">
                                     {isUploadingAudio ? 'Uploading your recording…' : 'Analyzing your speech…'}

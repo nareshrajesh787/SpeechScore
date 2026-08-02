@@ -132,9 +132,9 @@ export default function InteractiveTranscript({
 
                 const className = `
                     inline-block px-1 mx-0.5 rounded transition-all cursor-pointer
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
-                    ${isHighlighted ? 'bg-indigo-200 scale-105' : ''}
-                    ${isFiller || isPair ? 'text-red-600 bg-red-50 border-b-2 border-red-200 hover:bg-red-100' : 'text-gray-700 hover:bg-indigo-50'}
+                    focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1
+                    ${isHighlighted ? 'bg-brand-200 scale-105' : ''}
+                    ${isFiller || isPair ? 'text-needs-work-600 bg-needs-work-50 border-b-2 border-needs-work-200 hover:bg-needs-work-100' : 'text-ink-700 hover:bg-brand-50'}
                 `.trim();
 
                 return (
@@ -171,14 +171,14 @@ export default function InteractiveTranscript({
                 if (isPair) {
                     return (
                         <span key={index}>
-                            <span className="text-red-600 bg-red-50 border-b-2 border-red-200 rounded-md px-1 cursor-pointer hover:bg-red-100">
+                            <span className="text-needs-work-600 bg-needs-work-50 border-b-2 border-needs-work-200 rounded-md px-1 cursor-pointer hover:bg-needs-work-100">
                                 {word} {nextWord}
                             </span>{' '}
                         </span>
                     );
                 } else if (isFiller) {
                     return (
-                        <span key={index} className="text-red-600 bg-red-50 border-b-2 border-red-200 rounded-md px-1 cursor-pointer hover:bg-red-100">
+                        <span key={index} className="text-needs-work-600 bg-needs-work-50 border-b-2 border-needs-work-200 rounded-md px-1 cursor-pointer hover:bg-needs-work-100">
                             {word}{' '}
                         </span>
                     );
@@ -190,10 +190,10 @@ export default function InteractiveTranscript({
     };
 
     return (
-        <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-gradient-to-br from-white to-paper-50 p-6 rounded-xl border border-paper-300 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-lg text-gray-800">
-                    <FontAwesomeIcon icon="file-audio" className="text-indigo-600 mr-2" />
+                <h2 className="font-bold text-lg text-ink-800">
+                    <FontAwesomeIcon icon="file-audio" className="text-brand-600 mr-2" />
                     Interactive Transcript
                 </h2>
                 {audioUrl && (
@@ -203,7 +203,7 @@ export default function InteractiveTranscript({
                             {isPlaying ? 'Pause' : 'Play'}
                         </Button>
                         {audioDuration && (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-paper-500">
                                 {Math.floor(currentTime / 1000)}s / {Math.floor(audioDuration)}s
                             </span>
                         )}
@@ -221,12 +221,12 @@ export default function InteractiveTranscript({
 
             <div 
                 ref={transcriptRef}
-                className="text-base text-gray-600 leading-loose p-4 bg-white rounded-lg border border-gray-100 max-h-96 overflow-y-auto"
+                className="text-base text-ink-600 leading-loose p-4 bg-white rounded-lg border border-paper-200 max-h-96 overflow-y-auto"
             >
                 {renderTranscript()}
             </div>
 
-            <div className="mt-4 text-xs text-gray-500">
+            <div className="mt-4 text-xs text-paper-500">
                 <FontAwesomeIcon icon="info-circle" className="mr-1" />
                 {audioUrl ? (
                     <>Click any word to jump to that moment in the audio. Filler words are highlighted in red.</>

@@ -72,13 +72,13 @@ describe('AnalyzerForm', () => {
       render(<AnalyzerForm {...makeDefaultProps()} />);
 
       const dropzone = screen.getByTestId('audio-dropzone');
-      expect(dropzone.className).not.toContain('border-indigo-500');
+      expect(dropzone.className).not.toContain('border-brand-500');
 
       fireEvent.dragOver(dropzone, makeDataTransfer([]));
-      expect(dropzone.className).toContain('border-indigo-500');
+      expect(dropzone.className).toContain('border-brand-500');
 
       fireEvent.dragLeave(dropzone, makeDataTransfer([]));
-      expect(dropzone.className).not.toContain('border-indigo-500');
+      expect(dropzone.className).not.toContain('border-brand-500');
     });
   });
 });

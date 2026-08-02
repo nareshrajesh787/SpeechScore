@@ -46,7 +46,7 @@ export default function ResultPanel({ result, onTryAgain }) {
             className="space-y-6 font-medium"
         >
             {/*TOP BAR*/}
-            <div className="flex justify-between items-center text-sm text-gray-500">
+            <div className="flex justify-between items-center text-sm text-paper-500">
                 <p>
                     <FontAwesomeIcon icon={["far", "clock"]} className="me-1" />{" "}
                     Last analyzed: {getLastAnalyzedLabel()}
@@ -56,7 +56,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                         <Button
                             variant="ghost"
                             onClick={handleTryAgain}
-                            className="bg-indigo-100 hover:bg-indigo-200 rounded-3xl"
+                            className="bg-brand-100 hover:bg-brand-200 rounded-3xl"
                         >
                             <FontAwesomeIcon icon="rotate-right" />
                             Try Another
@@ -94,25 +94,25 @@ export default function ResultPanel({ result, onTryAgain }) {
             )}
 
             {/*RESULT METRICS*/}
-            <div className="bg-gradient-to-br from-white to-indigo-50/30 rounded-xl shadow-sm border-indigo-100 border p-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="bg-gradient-to-br from-white to-brand-50/30 rounded-xl shadow-sm border-brand-100 border p-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                 {/* WPM */}
                 <div>
-                    <p className="text-lg text-gray-700 font-semibold mb-3">
+                    <p className="text-lg text-ink-700 font-semibold mb-3">
                         <FontAwesomeIcon
                             icon="gauge"
-                            className="text-indigo-600 me-1"
+                            className="text-brand-600 me-1"
                         />{" "}
                         WPM
                     </p>
                     <div className="flex items-baseline justify-start gap-2">
-                        <p className="text-2xl font-bold text-gray-800">
+                        <p className="text-2xl font-bold text-ink-800">
                             {result.wpm}
                         </p>
-                        <p className="text-xs text-gray-500">Words/min</p>
+                        <p className="text-xs text-paper-500">Words/min</p>
                     </div>
-                    <div className="w-full h-2 bg-indigo-100 rounded-full mt-2 relative overflow-hidden">
+                    <div className="w-full h-2 bg-brand-100 rounded-full mt-2 relative overflow-hidden">
                         <div
-                            className="h-2 bg-indigo-600 rounded-full"
+                            className="h-2 bg-brand-600 rounded-full"
                             style={{
                                 width: `${Math.min(
                                     (result.wpm / 200) * 100,
@@ -125,27 +125,27 @@ export default function ResultPanel({ result, onTryAgain }) {
 
                 {/* FILLER WORDS */}
                 <div>
-                    <p className="text-lg text-gray-700 font-semibold mb-3">
+                    <p className="text-lg text-ink-700 font-semibold mb-3">
                         <FontAwesomeIcon
-                            icon="wand-magic-sparkles"
-                            className="text-orange-400 me-1"
+                            icon="comment-slash"
+                            className="text-brand-600 me-1"
                         />{" "}
                         Filler Words
                     </p>
                     <div className="flex items-baseline justify-start gap-2">
-                        <p className="text-2xl font-bold text-gray-800">
+                        <p className="text-2xl font-bold text-ink-800">
                             {Object.values(result.filler_count).reduce(
                                 (a, b) => a + b,
                                 0
                             )}
                         </p>
-                        <p className="text-xs text-gray-500">total</p>
+                        <p className="text-xs text-paper-500">total</p>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2 mb-2 flex justify-start gap-2 flex-wrap">
+                    <div className="text-xs text-paper-500 mt-2 mb-2 flex justify-start gap-2 flex-wrap">
                         {Object.entries(result.filler_count).map(
                             ([w, c], i) => (
                                 <span key={i} className="font-bold">
-                                    <span className="text-red-600 font-semibold bg-red-100 rounded-md p-[0.1rem] my-1">
+                                    <span className="text-needs-work-600 font-semibold bg-needs-work-100 rounded-md p-[0.1rem] my-1">
                                         {w}
                                     </span>{" "}
                                     — {c}x
@@ -157,18 +157,18 @@ export default function ResultPanel({ result, onTryAgain }) {
 
                 {/* CLARITY */}
                 <div>
-                    <p className="text-lg text-gray-700 font-semibold mb-3">
+                    <p className="text-lg text-ink-700 font-semibold mb-3">
                         <FontAwesomeIcon
                             icon="star"
-                            className="text-green-500 me-1"
+                            className="text-brand-600 me-1"
                         />{" "}
                         Clarity
                     </p>
                     <div className="flex justify-start items-center flex-wrap gap-2 mb-3">
-                        <p className="text-2xl font-bold text-gray-800">
+                        <p className="text-2xl font-bold text-ink-800">
                             {result.clarity_score}
                         </p>
-                        <p className="text-xs text-gray-500 me-2">/10</p>
+                        <p className="text-xs text-paper-500 me-2">/10</p>
                         <div className="flex text-lg items-center">
                             {[...Array(5)].map((_, i) => (
                                 <FontAwesomeIcon
@@ -176,8 +176,8 @@ export default function ResultPanel({ result, onTryAgain }) {
                                     icon="star"
                                     className={
                                         i < Math.round(result.clarity_score / 2)
-                                            ? "text-yellow-400"
-                                            : "text-gray-200"
+                                            ? "text-accent-400"
+                                            : "text-paper-300"
                                     }
                                 />
                             ))}
@@ -187,9 +187,9 @@ export default function ResultPanel({ result, onTryAgain }) {
                     <div className="flex justify-start gap-2">
                         <FontAwesomeIcon
                             icon="comment-dots"
-                            className="text-indigo-400"
+                            className="text-brand-400"
                         />{" "}
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-paper-500">
                             {result.pace_feedback}
                         </p>
                     </div>
@@ -197,11 +197,11 @@ export default function ResultPanel({ result, onTryAgain }) {
             </div>
 
             {/* AI FEEDBACK AND RUBRIC */}
-            <div className="bg-gradient-to-br from-white to-purple-50/20 rounded-xl shadow-sm border-purple-100 border p-6">
-                <p className="text-lg text-gray-700 font-bold mb-3">
+            <div className="bg-gradient-to-br from-white to-brand-50/20 rounded-xl shadow-sm border-brand-100 border p-6">
+                <p className="text-lg text-ink-700 font-bold mb-3">
                     <FontAwesomeIcon
                         icon="clipboard-list"
-                        className="text-orange-400 me-1"
+                        className="text-brand-600 me-1"
                     />{" "}
                     AI Generated Content Feedback
                 </p>
@@ -211,7 +211,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                     <div className="grid grid-rows-2 gap-4 pt-4 px-4">
                         {/* KEY STRENGTHS */}
                         <div className="flex-1">
-                            <p className="text-green-600 text-lg font-semibold mb-3">
+                            <p className="text-good-600 text-lg font-semibold mb-3">
                                 <FontAwesomeIcon
                                     icon="circle-check"
                                     className="me-2"
@@ -219,7 +219,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                                 Key Strengths
                             </p>
                             {result.ai_feedback.strengths.length > 0 ? (
-                                <ul className="list-disc ml-5 text-base text-gray-700 space-y-2">
+                                <ul className="list-disc ml-5 text-base text-ink-700 space-y-2">
                                     {result.ai_feedback.strengths.map(
                                         (point, i) => (
                                             <li key={i}>{point}</li>
@@ -227,13 +227,13 @@ export default function ResultPanel({ result, onTryAgain }) {
                                     )}
                                 </ul>
                             ) : (
-                                <p className="text-gray-500 text-sm italic">No strengths listed.</p>
+                                <p className="text-paper-500 text-sm italic">No strengths listed.</p>
                             )}
                         </div>
 
                         {/* AREAS TO IMPROVE */}
                         <div className="flex-1">
-                            <p className="text-orange-500 text-lg font-semibold mb-3">
+                            <p className="text-caution-600 text-lg font-semibold mb-3">
                                 <FontAwesomeIcon
                                     icon="triangle-exclamation"
                                     className="me-2"
@@ -241,7 +241,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                                 Areas to Improve
                             </p>
                             {result.ai_feedback.improvements.length > 0 ? (
-                                <ul className="list-disc ml-5 text-base text-gray-700 space-y-2">
+                                <ul className="list-disc ml-5 text-base text-ink-700 space-y-2">
                                     {result.ai_feedback.improvements.map(
                                         (point, i) => (
                                             <li key={i}>{point}</li>
@@ -249,24 +249,24 @@ export default function ResultPanel({ result, onTryAgain }) {
                                     )}
                                 </ul>
                             ) : (
-                                <p className="text-gray-500 text-sm italic">No improvements listed.</p>
+                                <p className="text-paper-500 text-sm italic">No improvements listed.</p>
                             )}
                         </div>
                     </div>
 
                     {/* RUBRIC BREAKDOWN */}
                     <div>
-                        <div className="bg-yellow-50 p-4 rounded-xl border-yellow-100 border shadow-md">
-                            <p className="text-lg text-gray-700 font-semibold mb-3">
+                        <div className="bg-paper-200 p-4 rounded-xl border-paper-300 border">
+                            <p className="text-lg text-ink-700 font-semibold mb-3">
                                 <FontAwesomeIcon
                                     icon="chart-simple"
-                                    className="text-yellow-400 me-1"
+                                    className="text-brand-600 me-1"
                                 />{" "}
                                 Rubric Breakdown
                             </p>
 
                             {/* RUBRIC SCORES */}
-                            <div className="grid gap-y-2 items-center text-base text-gray-700">
+                            <div className="grid gap-y-2 items-center text-base text-ink-700">
                                 {getRubricScoreEntries(result.rubric_scores).map(
                                     ({ criterion, score, max }, i) => (
                                         <div
@@ -274,7 +274,7 @@ export default function ResultPanel({ result, onTryAgain }) {
                                             className="flex justify-between items-center w-full"
                                         >
                                             <span>{criterion}</span>
-                                            <span className="font-semibold text-gray-800">
+                                            <span className="font-semibold text-ink-800">
                                                 {score}/{max}
                                             </span>
                                         </div>
@@ -284,10 +284,10 @@ export default function ResultPanel({ result, onTryAgain }) {
 
                             {/* TOTAL SCORE */}
                             <div className="justify-between items-center flex mt-4">
-                                <span className="font-semibold text-gray-500 text-sm">
+                                <span className="font-semibold text-paper-500 text-sm">
                                     Total Score:{" "}
                                 </span>
-                                <span className="font-bold text-lg text-indigo-600 bg-indigo-100 py-[0.15rem] px-1 rounded-md">
+                                <span className="font-bold text-lg text-brand-600 bg-brand-100 py-[0.15rem] px-1 rounded-md">
                                     {result.rubric_total}/{result.rubric_max}
                                 </span>
                             </div>

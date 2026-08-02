@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from './ui/Card';
+import Metric from './ui/Metric';
 import { getAiFeedback, getFillerTotal } from '../utils/normalizeRecording';
 import { formatRelativeDate } from '../utils/formatDate';
 
@@ -22,19 +23,11 @@ const RecordingCard = ({
     const showAsDraft = isDraft ?? recording.isDraft;
     const resolvedDraftNumber = draftNumber ?? recording.draftNumber;
 
-    // Handle different naming conventions (Dashboard uses 'feedback' array with slightly different structure vs ProjectView)
-    // We'll normalize to the structure used in the requested snippet
-
-    const wpm = recording.wpm ?? "—";
-    const clarity = recording.clarity_score ?? "—";
-
-    // Normalize rubric score
-    const scoreLabel = (recording.rubric_total != null && recording.rubric_max != null)
-        ? `${recording.rubric_total}/${recording.rubric_max}`
-        : "—";
-
-    // Normalize filler count
-    const totalFillers = getFillerTotal(recording.filler_count) ?? "—";
+    // Handle different naming conventions (Dashboard uses 'feedback' array with
+    // slightly different structure vs ProjectView). Metric renders its own
+    // em-dash placeholder for missing values, so pass the raw null through
+    // rather than substituting a string here.
+    const totalFillers = getFillerTotal(recording.filler_count);
 
     // Normalize arrays
     const { strengths } = getAiFeedback(recording);
@@ -46,16 +39,16 @@ const RecordingCard = ({
         <Card
             as={as}
             onClick={onClick}
-            className={`text-left flex flex-col w-full ${selected ? 'border-indigo-600 ring-1 ring-indigo-600' : 'hover:border-indigo-200'} ${className}`}
+            className={`text-left flex flex-col w-full ${selected ? 'border-brand-600 ring-1 ring-brand-600' : 'hover:border-brand-200'} ${className}`}
             padding="p-5"
         >
             <div className="flex items-center justify-between gap-3 mb-3">
-                <h2 className="text-lg font-semibold text-gray-900 truncate">
+                <h2 className="font-display text-lg font-semibold text-ink-900 truncate">
                     {recording.name || (showAsDraft ? `Draft ${resolvedDraftNumber}` : "Analysis")}
                 </h2>
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {date && (
-                        <span className="text-xs text-gray-500" title={recordedAt?.toLocaleString()}>
+                        <span className="text-xs text-paper-500" title={recordedAt?.toLocaleString()}>
                             {date}
                         </span>
                     )}
@@ -65,7 +58,7 @@ const RecordingCard = ({
                                 e.stopPropagation();
                                 onDelete(recording);
                             }}
-                            className="p-3.5 -m-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-3.5 -m-1.5 text-ink-400 hover:text-needs-work-500 hover:bg-needs-work-50 rounded-lg transition-colors"
                             title="Delete recording"
                         >
                             <span className="sr-only">Delete</span>
@@ -75,35 +68,36 @@ const RecordingCard = ({
                 </div>
             </div>
 
+            {/* Each tile derives its own semantic tone, so an out-of-range
+                value reads as out-of-range at a glance instead of looking
+                identical to a good one. */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-indigo-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-600">WPM</p>
-                    <p className="text-xl font-bold text-indigo-700">{wpm}</p>
-                </div>
-                <div className="bg-indigo-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-600">Fillers</p>
-                    <p className="text-xl font-bold text-indigo-700">{totalFillers}</p>
-                </div>
-                <div className="bg-indigo-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-600">Clarity</p>
-                    <p className="text-xl font-bold text-indigo-700">{clarity}</p>
-                </div>
-                <div className="bg-indigo-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-600">Rubric</p>
-                    <p className="text-xl font-bold text-indigo-700">{scoreLabel}</p>
-                </div>
+                <Metric label="WPM" value={recording.wpm} type="wpm" />
+                <Metric
+                    label="Fillers"
+                    value={totalFillers}
+                    type="fillers"
+                    durationSeconds={recording.audio_duration}
+                />
+                <Metric label="Clarity" value={recording.clarity_score} type="clarity" />
+                <Metric
+                    label="Rubric"
+                    value={recording.rubric_total}
+                    max={recording.rubric_max}
+                    type="rubric"
+                />
             </div>
 
             {recording.pace_feedback && (
                 <div className="mb-3">
-                    <p className="text-sm text-gray-700"><span className="font-semibold">Pace:</span> {recording.pace_feedback}</p>
+                    <p className="text-sm text-ink-700"><span className="font-semibold">Pace:</span> {recording.pace_feedback}</p>
                 </div>
             )}
 
             {transcriptSnippet && (
                 <div className="mb-4">
-                    <p className="text-xs font-semibold text-gray-600 mb-1">Transcript</p>
-                    <p className="text-sm text-gray-700 line-clamp-3">
+                    <p className="text-xs font-semibold text-ink-600 mb-1">Transcript</p>
+                    <p className="text-sm text-ink-700 line-clamp-3">
                         {transcriptSnippet}{hasMoreTranscript ? '…' : ''}
                     </p>
                 </div>
@@ -112,10 +106,10 @@ const RecordingCard = ({
             {(strengths.length > 0) && (
                 <div className="mt-auto">
                     <div className="mb-2">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">AI Strengths</p>
+                        <p className="text-xs font-semibold text-ink-600 mb-1">AI Strengths</p>
                         <div className="flex flex-wrap gap-2">
                             {strengths.slice(0, 2).map((s, idx) => (
-                                <span key={idx} className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-1">
+                                <span key={idx} className="text-xs bg-good-50 text-good-700 border border-good-200 rounded-full px-2 py-1">
                                     {s}
                                 </span>
                             ))}

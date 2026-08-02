@@ -25,12 +25,12 @@ describe('Tabs', () => {
         const activeButton = screen.getByText('Upload File').closest('button');
         const inactiveButton = screen.getByText('Studio Mode').closest('button');
 
-        expect(activeButton.className).toContain('bg-indigo-600');
+        expect(activeButton.className).toContain('bg-brand-600');
         expect(activeButton.className).toContain('text-white');
 
-        expect(inactiveButton.className).not.toContain('bg-indigo-600');
+        expect(inactiveButton.className).not.toContain('bg-brand-600');
         expect(inactiveButton.className).not.toContain('text-white');
-        expect(inactiveButton.className).toContain('text-gray-600');
+        expect(inactiveButton.className).toContain('text-ink-600');
     });
 
     it('calls onChange with the clicked tab id', () => {
